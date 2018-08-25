@@ -468,42 +468,6 @@ RSpec.describe InternalApi::V1::PillarsController, type: :controller do
     }
   end
 
-  def expected_dex_oidc_json(num)
-    {
-      id: num,
-      type: "oidc",
-      name: "OIDC Server #{num}",
-      provider_url: "http://oidc_host_#{num}.com",
-      client_id: "client",
-      client_secret: "client_secret",
-      callback_url: "http://127.0.0.1:5556",
-      basic_auth: true
-    }
-  end
-
-  # rubocop:disable RSpec/ExampleLength
-  context "with dex OIDC connectors" do
-    it "has dex OIDC connectors" do
-      expected_json = {
-        registries:          [],
-        kubelet:             {
-          :"compute-resources" => {},
-          :"eviction-hard"     => ""
-        },
-        system_certificates: [],
-        dex:                 {
-          connectors: [
-            expected_dex_oidc_json(dex_connector_oidc.id)
-          ]
-        }
-      }
-      get :show do
-        expect(json).to eq(expected_json)
-        delete(dex_connector_oidc)
-      end
-    end
-  end
-
   # rubocop:disable RSpec/ExampleLength
   context "with dex LDAP connectors tls" do
     it "has dex LDAP connectors" do
@@ -564,4 +528,48 @@ RSpec.describe InternalApi::V1::PillarsController, type: :controller do
     end
   end
   # rubocop:enable RSpec/ExampleLength
+
+  def expected_dex_oidc_json(num)
+    {
+      id:            num,
+      type:          "oidc",
+      name:          "OIDC Server #{num}",
+      provider_url:  "http://your.fqdn.here:5556/dex",
+      client_id:     "client",
+      client_secret: "client_secret",
+      callback_url:  "http://some.other.fqdn/callback",
+      basic_auth:    true
+    }
+  end
+
+  context "with dex OIDC connectors" do
+    let!(:oidc_connector) do
+      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+        create(:dex_connector_oidc)
+      end
+    end
+    let(:expected_json) do
+      {
+        registries:          [],
+        kubelet:             {
+          :"compute-resources" => {},
+          :"eviction-hard"     => ""
+        },
+        system_certificates: [],
+        dex:                 {
+          connectors: [
+            expected_dex_oidc_json(oidc_connector.id)
+          ]
+        }
+      }
+    end
+
+    it "has dex OIDC connectors" do
+      get :show do
+        expect(json).to eq(expected_json)
+        delete(oidc_connector)
+      end
+    end
+  end
+
 end
