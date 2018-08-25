@@ -470,14 +470,14 @@ RSpec.describe InternalApi::V1::PillarsController, type: :controller do
 
   def expected_dex_oidc_json(num)
     {
-      id: num,
-      type: "oidc",
-      name: "OIDC Server #{num}",
-      provider_url: "http://oidc_host_#{num}.com",
-      client_id: "client",
+      id:            num,
+      type:          "oidc",
+      name:          "OIDC Server #{num}",
+      provider_url:  "http://oidc_host_#{num}.com",
+      client_id:     "client",
       client_secret: "client_secret",
-      callback_url: "http://127.0.0.1:5556",
-      basic_auth: true
+      callback_url:  "http://127.0.0.1:5556",
+      basic_auth:    true
     }
   end
 
@@ -504,7 +504,6 @@ RSpec.describe InternalApi::V1::PillarsController, type: :controller do
     end
   end
 
-  # rubocop:disable RSpec/ExampleLength
   context "with dex LDAP connectors tls" do
     it "has dex LDAP connectors" do
       dex_connector_ldap = create(:dex_connector_ldap, :tls, :regular_admin)
@@ -563,5 +562,4 @@ RSpec.describe InternalApi::V1::PillarsController, type: :controller do
       end
     end
   end
-  # rubocop:enable RSpec/ExampleLength
 end
