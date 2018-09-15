@@ -11,7 +11,7 @@ RSpec.configure do |config|
   config.before(:suite) do
     DatabaseCleaner.clean_with :truncation
     # OIDC connector database validation makes a web call
-    VCR.use_cassette("oidc/validate_connector", record: :none) do
+    VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
       DatabaseCleaner.cleaning do
         factories_to_lint = FactoryGirl.factories
         FactoryGirl.lint factories_to_lint
