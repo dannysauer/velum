@@ -78,10 +78,10 @@ describe "Feature: OIDC connector settings", js: true do
 
     it "shows an error message for empty OIDC fields" do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        fill_in id: "oidc_name",          with: ""
-        fill_in id: "oidc_provider",      with: ""
-        fill_in id: "oidc_client_id",     with: ""
-        fill_in id: "oidc_client_secret", with: ""
+        #fill_in id: "oidc_name",          with: ""
+        #fill_in id: "oidc_provider",      with: ""
+        #fill_in id: "oidc_client_id",     with: ""
+        #fill_in id: "oidc_client_secret", with: ""
 
         click_button("Validate")
         expect(page).to have_content("Name can't be blank")
@@ -107,10 +107,10 @@ describe "Feature: OIDC connector settings", js: true do
 
     it "shows an error message for invalid OIDC issuer URL" do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        fill_in id: "oidc_name",          with: "malformed URL test oidc"
+        #fill_in id: "oidc_name",          with: "malformed URL test oidc"
         fill_in id: "oidc_provider",      with: "http://broken:fqdn.is.invalid"
-        fill_in id: "oidc_client_id",     with: "client"
-        fill_in id: "oidc_client_secret", with: "secret_string"
+        #fill_in id: "oidc_client_id",     with: "client"
+        #fill_in id: "oidc_client_secret", with: "secret_string"
 
         click_button("Validate")
         expect(page).to have_content("is not a valid OIDC provider")

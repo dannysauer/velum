@@ -71,4 +71,11 @@ describe DexConnectorOidc, type: :model do
       end
     end
   end
+
+  # Using VCR seems to suppress the creation of SocketError, so raise it here.
+  it "catches an elusive exception just for code coverage" do
+      expect(OidcProviderValidator).to receive(:compliant?).and_raise(SocketError)
+      connector.provider_url = good_provider_url
+      expect(connector).not_to be_valid
+  end
 end

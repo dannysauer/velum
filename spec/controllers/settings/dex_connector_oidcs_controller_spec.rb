@@ -24,19 +24,15 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
     end
   end
 
-  # describe "GET #new" do
-  #   before do
-  #     get :new
-  #   end
-
-  #   it "assigns a new oidc dex connector to @certificate_holder" do
-  #     expect(assigns(:certificate_holder)).to be_a_new(DexConnectorOidc)
-  #   end
-
-  #   it "assigns a new certificate to @cert" do
-  #     expect(assigns(:cert)).to be_a_new(Certificate)
-  #   end
-  # end
+  describe "GET #new" do
+    before do
+      get :new
+    end
+    
+    it "sets data validity to be false" do
+      expect(assigns(:is_data_valid)).to be(false)
+    end
+  end
 
   describe "GET #edit" do
     let!(:connector) do
@@ -56,6 +52,124 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
     it "return 404 if oidc connector does not exist" do
       get :edit, id: DexConnectorOidc.last.id + 1
       expect(response).to have_http_status(:not_found)
+    end
+
+  end
+
+  describe "GET #create" do
+    good_provider = "http://your.fqdn.here:5556/dex"
+    good_params = {
+      name:          "good oidc",
+      provider_url:  good_provider,
+      callback_url:  "http://well.formed.but.invalid/",
+      basic_auth:    true,
+      client_id:     "client",
+      client_secret: "secret"
+    }
+    bad_params = {
+      name:          "good oidc",
+      provider_url:  "dead",
+      callback_url:  "http://well.formed.but.invalid/",
+      basic_auth:    true,
+      client_id:     "client",
+      client_secret: "secret"
+    }
+
+    it "fails validation with a bad provider" do
+      get :create, validate: true, dex_connector_oidc: bad_params
+      expect(response).to render_template("new")
+      expect(assigns(:is_data_valid)).to be(false)
+    end
+
+    it "passes validation with a good provider" do
+      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+        get :create, validate: true, dex_connector_oidc: good_params
+      end
+      expect(response).to render_template("new")
+      expect(assigns(:is_data_valid)).to be(true)
+    end
+
+    it "fails creating with a bad provider" do
+      get :create, validate: false, dex_connector_oidc: bad_params
+      expect(response).to render_template("new")
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "passes creating with a good provider" do
+      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+        get :create, validate: false, dex_connector_oidc: good_params
+      end
+      expect(response).not_to have_http_status(:unprocessable_entity)
+      expect(subject).to redirect_to(settings_dex_connector_oidcs_path)
+    end
+  end
+
+  describe "GET #update" do
+    good_provider = "http://your.fqdn.here:5556/dex"
+    let!(:connector) do
+      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+        create(:dex_connector_oidc)
+      end
+    end
+
+    it "fails validation with a bad provider" do
+      get :update, id: connector.id, validate: true, 
+        dex_connector_oidc: {
+          name:          connector.name,
+          provider_url:  "dead",
+          callback_url:  connector.callback_url,
+          basic_auth:    connector.basic_auth,
+          client_id:     connector.client_id,
+          client_secret: connector.client_secret
+        }
+      expect(response).to render_template("edit")
+      expect(assigns(:is_data_valid)).to be(false)
+    end
+
+    it "passes validation with a good provider" do
+      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+        get :update, id: connector.id, validate: true, 
+          dex_connector_oidc: {
+            name:          connector.name,
+            provider_url:  good_provider,
+            callback_url:  connector.callback_url,
+            basic_auth:    connector.basic_auth,
+            client_id:     connector.client_id,
+            client_secret: connector.client_secret
+          }
+      end
+      expect(response).to render_template("edit")
+      expect(assigns(:is_data_valid)).to be(true)
+    end
+
+    it "fails updating with a bad provider" do
+      get :update, id: connector.id, validate: false, 
+        dex_connector_oidc: {
+          name:          connector.name,
+          provider_url:  "dead",
+          callback_url:  connector.callback_url,
+          basic_auth:    connector.basic_auth,
+          client_id:     connector.client_id,
+          client_secret: connector.client_secret
+        }
+      expect(response).to render_template("edit")
+      expect(response).to have_http_status(:unprocessable_entity)
+    end
+
+    it "passes updating with a good provider" do
+      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+        get :update, id: connector.id, validate: false, 
+          dex_connector_oidc: {
+            name:          connector.name,
+            provider_url:  good_provider,
+            callback_url:  connector.callback_url,
+            basic_auth:    connector.basic_auth,
+            client_id:     connector.client_id,
+            client_secret: connector.client_secret
+          }
+      end
+      expect(response).not_to have_http_status(:unprocessable_entity)
+      expect(subject).to redirect_to([:settings, connector])
     end
   end
 
