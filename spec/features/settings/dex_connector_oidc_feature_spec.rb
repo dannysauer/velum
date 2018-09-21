@@ -76,76 +76,6 @@ describe "Feature: OIDC connector settings", js: true do
       visit new_settings_dex_connector_oidc_path
     end
 
-    it "shows an error message for empty OIDC fields" do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        #fill_in id: "oidc_name",          with: ""
-        #fill_in id: "oidc_provider",      with: ""
-        #fill_in id: "oidc_client_id",     with: ""
-        #fill_in id: "oidc_client_secret", with: ""
-
-        click_button("Validate")
-        expect(page).to have_content("Name can't be blank")
-        expect(page).to have_content("Provider Url can't be blank")
-        expect(page).to have_content("Client Id can't be blank")
-        expect(page).to have_content("Client Secret can't be blank")
-        # TODO: expect save button to be disabled
-      end
-    end
-
-    it "shows an error message for non-http OIDC issuer" do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        fill_in id: "oidc_name",          with: "bad format test oidc"
-        fill_in id: "oidc_provider",      with: "your.fqdn.here"
-        fill_in id: "oidc_client_id",     with: "client"
-        fill_in id: "oidc_client_secret", with: "secret_string"
-
-        click_button("Validate")
-        expect(page).to have_content("is not a valid OIDC provider")
-        # TODO: expect save button to be disabled
-      end
-    end
-
-    it "shows an error message for invalid OIDC issuer URL" do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        #fill_in id: "oidc_name",          with: "malformed URL test oidc"
-        fill_in id: "oidc_provider",      with: "http://broken:fqdn.is.invalid"
-        #fill_in id: "oidc_client_id",     with: "client"
-        #fill_in id: "oidc_client_secret", with: "secret_string"
-
-        click_button("Validate")
-        expect(page).to have_content("is not a valid OIDC provider")
-        # TODO: expect save button to be disabled
-      end
-    end
-
-    it "shows an error message for invalid OIDC issuer hostname" do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        fill_in id: "oidc_name",          with: "bad hostname test oidc"
-        fill_in id: "oidc_provider",      with: "http://this.fqdn.is.invalid" # RFC 6761
-        fill_in id: "oidc_client_id",     with: "client"
-        fill_in id: "oidc_client_secret", with: "secret_string"
-
-        click_button("Validate")
-        expect(page).to have_content("is not a valid OIDC provider")
-        # TODO: expect save button to be disabled
-      end
-    end
-
-    it "shows an error message for mismatched OIDC issuer" do
-      VCR.use_cassette("oidc/invalid_connector", allow_playback_repeats: true, record: :none) do
-        fill_in id: "oidc_name",          with: "bad hostname test oidc"
-        fill_in id: "oidc_provider",      with: "http://your.fqdn.here:5556/bad"
-        fill_in id: "oidc_client_id",     with: "client"
-        fill_in id: "oidc_client_secret", with: "secret_string"
-
-        click_button("Validate")
-        expect(page).to have_content("is not a valid OIDC provider")
-        # TODO: expect save button to be disabled
-      end
-    end
-
-    # it "shows an error message for 404-generating OIDC issuer"
-
     it "allows a user to create an OIDC connector" do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
         fill_in id: "oidc_name",          with: "test oidc"
@@ -155,9 +85,8 @@ describe "Feature: OIDC connector settings", js: true do
 
         click_button("Validate")
         click_button("Save")
-        last_oidc_connector = DexConnectorOidc.last
         expect(page).to have_content("DexConnectorOidc was successfully created.")
-        expect(page).to have_current_path(settings_dex_connector_oidc_path(last_oidc_connector))
+        expect(page).to have_current_path(settings_dex_connector_oidcs_path)
       end
     end
   end
@@ -169,7 +98,7 @@ describe "Feature: OIDC connector settings", js: true do
       end
     end
 
-    it "allows a user to edit an oidc connector" do
+    it "allows a user to edit an oidc connector clicking validate and then save" do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
         fill_in id: "oidc_name", with: "a new name"
 
@@ -179,15 +108,6 @@ describe "Feature: OIDC connector settings", js: true do
       end
     end
 
-    it "shows an error message if oidc edit validation fails" do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        fill_in id: "oidc_provider", with: "http://this.fqdn.is.invalid"
-
-        click_button("Validate")
-        expect(page).to have_content("is not a valid OIDC provider")
-        # TODO: expect save button to be disabled
-      end
-    end
   end
 
   describe "#show" do

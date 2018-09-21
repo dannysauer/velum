@@ -28,7 +28,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
     before do
       get :new
     end
-    
+
     it "sets data validity to be false" do
       expect(assigns(:is_data_valid)).to be(false)
     end
@@ -56,54 +56,190 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
 
   end
 
+  # rubocop:disable RSpec/ExampleLength
   describe "GET #create" do
     good_provider = "http://your.fqdn.here:5556/dex"
-    good_params = {
-      name:          "good oidc",
-      provider_url:  good_provider,
-      callback_url:  "http://well.formed.but.invalid/",
-      basic_auth:    true,
-      client_id:     "client",
-      client_secret: "secret"
-    }
-    bad_params = {
-      name:          "good oidc",
-      provider_url:  "dead",
-      callback_url:  "http://well.formed.but.invalid/",
-      basic_auth:    true,
-      client_id:     "client",
-      client_secret: "secret"
-    }
 
     it "fails validation with a bad provider" do
-      get :create, validate: true, dex_connector_oidc: bad_params
+      get :create, validate: true, dex_connector_oidc: {
+        name:          "good oidc",
+        provider_url:  "dead",
+        callback_url:  "http://well.formed.but.invalid/",
+        basic_auth:    true,
+        client_id:     "client",
+        client_secret: "secret"
+      }
       expect(response).to render_template("new")
       expect(assigns(:is_data_valid)).to be(false)
     end
 
     it "passes validation with a good provider" do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        get :create, validate: true, dex_connector_oidc: good_params
+        get :create, validate: true, dex_connector_oidc: {
+          name:          "good oidc",
+          provider_url:  good_provider,
+          callback_url:  "http://well.formed.but.invalid/",
+          basic_auth:    true,
+          client_id:     "client",
+          client_secret: "secret"
+        }
       end
       expect(response).to render_template("new")
       expect(assigns(:is_data_valid)).to be(true)
     end
 
     it "fails creating with a bad provider" do
-      get :create, validate: false, dex_connector_oidc: bad_params
+      get :create, validate: false, dex_connector_oidc: {
+        name:          "good oidc",
+        provider_url:  "dead",
+        callback_url:  "http://well.formed.but.invalid/",
+        basic_auth:    true,
+        client_id:     "client",
+        client_secret: "secret"
+      }
       expect(response).to render_template("new")
       expect(response).to have_http_status(:unprocessable_entity)
     end
 
     it "passes creating with a good provider" do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        get :create, validate: false, dex_connector_oidc: good_params
+        get :create, validate: false, dex_connector_oidc: {
+          name:          "good oidc",
+          provider_url:  good_provider,
+          callback_url:  "http://well.formed.but.invalid/",
+          basic_auth:    true,
+          client_id:     "client",
+          client_secret: "secret"
+        }
       end
       expect(response).not_to have_http_status(:unprocessable_entity)
-      expect(subject).to redirect_to(settings_dex_connector_oidcs_path)
+      # expect(subject).to redirect_to(settings_dex_connector_oidcs_path)
+      expect(response).to redirect_to(settings_dex_connector_oidcs_path)
+    end
+
+    context "with rendered views" do
+      render_views
+
+      it "shows an error message for empty name" do
+        VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+          get :create, validate: false, dex_connector_oidc: {
+            name:          "",
+            provider_url:  good_provider,
+            callback_url:  "http://well.formed.but.invalid/", # can't be blank in form
+            basic_auth:    true, # also can't be blank - only true/false
+            client_id:     "client",
+            client_secret: "secret"
+          }
+        end
+        expect(response).to render_template("new")
+        expect(response.body).to match(/Name can('|&#39;)t be blank/)
+        # TODO: expect save button to be disabled
+      end
+
+      it "shows an error message for empty provider" do
+        get :create, validate: false, dex_connector_oidc: {
+          name:          "good oidc",
+          provider_url:  "",
+          callback_url:  "http://well.formed.but.invalid/", # can't be blank in form
+          basic_auth:    true, # also can't be blank - only true/false
+          client_id:     "client",
+          client_secret: "secret"
+        }
+        expect(response).to render_template("new")
+        expect(response.body).to match(
+          /Provider Url (can('|&#39;)t be blank|is not a valid HTTP URL)/i
+        )
+        # TODO: expect save button to be disabled
+      end
+
+      it "shows an error message for empty client id" do
+        VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+          get :create, validate: false, dex_connector_oidc: {
+            name:          "good oidc",
+            provider_url:  good_provider,
+            callback_url:  "http://well.formed.but.invalid/", # can't be blank in form
+            basic_auth:    true, # also can't be blank - only true/false
+            client_id:     "",
+            client_secret: "secret"
+          }
+        end
+        expect(response).to render_template("new")
+        expect(response.body).to match(/Client (Id )?can('|&#39;)t be blank/i)
+        # TODO: expect save button to be disabled
+      end
+
+      it "shows an error message for empty client secret" do
+        VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+          get :create, validate: false, dex_connector_oidc: {
+            name:          "good oidc",
+            provider_url:  good_provider,
+            callback_url:  "http://well.formed.but.invalid/", # can't be blank in form
+            basic_auth:    true, # also can't be blank - only true/false
+            client_id:     "client",
+            client_secret: ""
+          }
+        end
+        expect(response).to render_template("new")
+        expect(response.body).to match(/Client Secret can('|&#39;)t be blank/i)
+        # TODO: expect save button to be disabled
+      end
+
+      # rubocop:disable RSpec/MultipleExpectations
+      it "shows an error message for non-http issuer entry" do
+        get :create, validate: false, dex_connector_oidc: {
+          name:          "good oidc",
+          provider_url:  "bare.hostname",
+          callback_url:  "http://well.formed.but.invalid/",
+          basic_auth:    true,
+          client_id:     "client",
+          client_secret: "secret"
+        }
+        expect(response).to render_template("new")
+        expect(response.body).to match(/is not a valid HTTP URL/)
+        expect(response.body).not_to match(/unresolvable hostname|discovery failure|timeout/)
+      end
+      # rubocop:enable RSpec/MultipleExpectations
+
+      # rubocop:disable RSpec/MultipleExpectations
+      it "shows an error message for invalid OIDC issuer hostname" do
+        get :create, validate: false, dex_connector_oidc: {
+          name:          "good oidc",
+          provider_url:  "http://this.fqdn.is.invalid", # RFC 6761
+          callback_url:  "http://well.formed.but.invalid/",
+          basic_auth:    true,
+          client_id:     "client",
+          client_secret: "secret"
+        }
+        expect(response).to render_template("new")
+        expect(response.body).to match(/is not a valid OIDC provider/)
+        expect(response.body).to match(/unresolvable hostname|discovery failure/)
+      end
+      # rubocop:enable RSpec/MultipleExpectations
+
+      # rubocop:disable RSpec/MultipleExpectations
+      it "shows an error message for mismatched OIDC issuer" do
+        VCR.use_cassette("oidc/invalid_connector", allow_playback_repeats: true, record: :none) do
+          get :create, validate: false, dex_connector_oidc: {
+            name:          "good oidc",
+            provider_url:  "http://your.fqdn.here:5556/bad",
+            callback_url:  "http://well.formed.but.invalid/",
+            basic_auth:    true,
+            client_id:     "client",
+            client_secret: "secret"
+          }
+        end
+        expect(response).to render_template("new")
+        expect(response.body).to match(/is not a valid OIDC provider/)
+        expect(response.body).to match(/discovery failure/)
+      end
+      # rubocop:enable RSpec/MultipleExpectations
+
+      # it "shows an error message for 404-generating OIDC issuer"
     end
   end
+  # rubocop:enable RSpec/ExampleLength
 
+  # rubocop:disable RSpec/ExampleLength
   describe "GET #update" do
     good_provider = "http://your.fqdn.here:5556/dex"
     let!(:connector) do
@@ -113,7 +249,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
     end
 
     it "fails validation with a bad provider" do
-      get :update, id: connector.id, validate: true, 
+      get :update, id: connector.id, validate: true,
         dex_connector_oidc: {
           name:          connector.name,
           provider_url:  "dead",
@@ -128,7 +264,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
 
     it "passes validation with a good provider" do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        get :update, id: connector.id, validate: true, 
+        get :update, id: connector.id, validate: true,
           dex_connector_oidc: {
             name:          connector.name,
             provider_url:  good_provider,
@@ -143,7 +279,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
     end
 
     it "fails updating with a bad provider" do
-      get :update, id: connector.id, validate: false, 
+      get :update, id: connector.id, validate: false,
         dex_connector_oidc: {
           name:          connector.name,
           provider_url:  "dead",
@@ -158,7 +294,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
 
     it "passes updating with a good provider" do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        get :update, id: connector.id, validate: false, 
+        get :update, id: connector.id, validate: false,
           dex_connector_oidc: {
             name:          connector.name,
             provider_url:  good_provider,
@@ -169,9 +305,11 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
           }
       end
       expect(response).not_to have_http_status(:unprocessable_entity)
-      expect(subject).to redirect_to([:settings, connector])
+      # expect(subject).to redirect_to([:settings, connector])
+      expect(response).to redirect_to([:settings, connector])
     end
   end
+  # rubocop:enable RSpec/ExampleLength
 
   describe "POST #create" do
     # rubocop:disable RSpec/ExampleLength
