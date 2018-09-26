@@ -26,9 +26,7 @@ class Settings::DexConnectorOidcsController < SettingsController
       render action: :new,
              notice: @is_data_valid ? "#{@data_holder.class} is valid" : ""
     else
-      ActiveRecord::Base.transaction do
-        @data_holder.save!
-      end
+      @data_holder.save!
       redirect_to settings_dex_connector_oidcs_path,
                   notice: "#{@data_holder.class} was successfully created."
     end
@@ -37,9 +35,7 @@ class Settings::DexConnectorOidcsController < SettingsController
   end
 
   def destroy
-    ActiveRecord::Base.transaction do
-      @data_holder.destroy!
-    end
+    @data_holder.destroy!
 
     redirect_to settings_dex_connector_oidcs_path,
                 notice: "OIDC Connector was successfully removed."
@@ -56,9 +52,7 @@ class Settings::DexConnectorOidcsController < SettingsController
       render action: :edit,
              notice: @is_data_valid ? "#{@data_holder.class} is valid" : ""
     else
-      ActiveRecord::Base.transaction do
-        @data_holder.update_attributes!(data_holder_update_params)
-      end
+      @data_holder.update_attributes!(data_holder_update_params)
       redirect_to [:settings, @data_holder],
                   notice: "#{@data_holder.class} was successfully updated."
     end
