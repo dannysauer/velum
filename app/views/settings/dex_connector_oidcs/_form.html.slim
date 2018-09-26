@@ -14,7 +14,6 @@
     small.form-text.text-muted
       | Name shown to user when selecting a connector
 
-  hr
   h4 Provider
 
   .form-group class="#{error_class_for(@data_holder, :provider_url)}"
@@ -37,8 +36,8 @@
     = error_messages_for(@data_holder, :basic_auth)
     small.form-text.text-muted
       | Set to "Off" only if this OIDC provider requires credentials to be sent using GET (this is uncommon)
+    br
     
-  hr
   h4 Client
   
   / The 'https' and '3200' seem to be hard-coded elsewhere, so I assume they're not discoverable :/
