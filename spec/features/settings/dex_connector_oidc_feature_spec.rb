@@ -1,8 +1,6 @@
 require "rails_helper"
 
 # rubocop:disable RSpec/ExampleLength
-# TODO: do we need js?
-# describe "Feature: OIDC connector settings", js: true do
 describe "Feature: OIDC connector settings", js: true do
   let!(:user) { create(:user) }
   let!(:dex_connector_oidc) do
