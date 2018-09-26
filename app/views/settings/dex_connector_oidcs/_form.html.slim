@@ -24,7 +24,7 @@
     small.form-text.text-muted
       | Issuer used by OIDC Provider
     
-  form-group class="#{error_class_for(@data_holder, :basic_auth)}"
+  .form-group class="#{error_class_for(@data_holder, :basic_auth)}"
     = f.label :basic_auth, "Basic Auth"
     br
     .btn-group.btn-group-toggle data-toggle="buttons"
