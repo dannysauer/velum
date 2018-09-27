@@ -34,9 +34,9 @@
         = f.radio_button :basic_auth, "false", checked: !@data_holder.basic_auth
         | Off
     = error_messages_for(@data_holder, :basic_auth)
+    br
     small.form-text.text-muted
       | Set to "Off" only if this OIDC provider requires credentials to be sent using GET (this is uncommon)
-    br
     
   h4 Client
   
