@@ -8,7 +8,7 @@ FactoryGirl.define do
     basic_auth    true
 
     trait :skip_validation do
-      to_create {|instance| instance.save(validate: false)}
+      to_create { |instance| instance.save(validate: false) }
     end
   end
 end
