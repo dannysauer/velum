@@ -44,10 +44,8 @@
   - external_api_url = "https://#{Pillar.value(pillar: :apiserver)}:32000/callback"
   .form-group class="#{error_class_for(@data_holder, :callback_url)}"
     = f.label :callback_url, "Callback URL:"
-    br
-    form-text
+    span.show
       = external_api_url
-    br
     small.form-text.text-muted
       | URL which will be provided to OIDC provider as the callback location
     = f.hidden_field :callback_url, id: "oidc_callback_url", class: "form-control", value: external_api_url, readonly: true
