@@ -2,25 +2,10 @@ require "rails_helper"
 
 # rubocop:disable RSpec/ExampleLength
 describe "Feature: OIDC connector settings", js: true do
-  let!(:user) { create(:user) }
-  let!(:dex_connector_oidc) do
-    VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-      create(:dex_connector_oidc)
-    end
-  end
-  let!(:dex_connector_oidc2) do
-    VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-      create(:dex_connector_oidc)
-    end
-  end
-  let!(:dex_connector_oidc3) do
-    VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-      create(:dex_connector_oidc)
-    end
-  end
-
-  # let!(:dex_connector_oidc2) { create(:dex_connector_oidc) }
-  # let!(:dex_connector_oidc3) { create(:dex_connector_oidc) }
+  let!(:user)                { create(:user) }
+  let!(:dex_connector_oidc)  { create(:dex_connector_oidc, :skip_validation) }
+  let!(:dex_connector_oidc2) { create(:dex_connector_oidc, :skip_validation) }
+  let!(:dex_connector_oidc3) { create(:dex_connector_oidc, :skip_validation) }
 
   before do
     setup_done

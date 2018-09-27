@@ -9,11 +9,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
   end
 
   describe "GET #index" do
-    let!(:connector) do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        create(:dex_connector_oidc)
-      end
-    end
+    let!(:connector) { create(:dex_connector_oidc, :skip_validation) }
 
     before do
       get :index
@@ -35,11 +31,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
   end
 
   describe "GET #edit" do
-    let!(:connector) do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        create(:dex_connector_oidc)
-      end
-    end
+    let!(:connector) { create(:dex_connector_oidc, :skip_validation) }
 
     before do
       get :edit, id: connector.id
@@ -242,11 +234,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
   # rubocop:disable RSpec/ExampleLength
   describe "GET #update" do
     good_provider = "http://your.fqdn.here:5556/dex"
-    let!(:connector) do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        create(:dex_connector_oidc)
-      end
-    end
+    let!(:connector) { create(:dex_connector_oidc, :skip_validation) }
 
     it "fails validation with a bad provider" do
       get :update, id: connector.id, validate: true,
@@ -360,11 +348,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
   end
 
   describe "PATCH #update" do
-    let!(:connector) do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        create(:dex_connector_oidc)
-      end
-    end
+    let!(:connector) { create(:dex_connector_oidc, :skip_validation) }
 
     it "updates an oidc connector" do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
@@ -376,11 +360,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
   end
 
   describe "DELETE #destroy" do
-    let!(:connector) do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        create(:dex_connector_oidc)
-      end
-    end
+    let!(:connector) { create(:dex_connector_oidc, :skip_validation) }
 
     it "deletes an oidc connector" do
       expect do

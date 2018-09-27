@@ -529,25 +529,27 @@ RSpec.describe InternalApi::V1::PillarsController, type: :controller do
   end
   # rubocop:enable RSpec/ExampleLength
 
-  def expected_dex_oidc_json(num)
-    {
-      id:            num,
-      type:          "oidc",
-      name:          "OIDC Server #{num}",
-      provider_url:  "http://your.fqdn.here:5556/dex",
-      client_id:     "client",
-      client_secret: "client_secret",
-      callback_url:  "http://some.other.fqdn/callback",
-      basic_auth:    true
-    }
-  end
-
   context "with dex OIDC connectors" do
-    let!(:oidc_connector) do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
-        create(:dex_connector_oidc)
-      end
+    # because name increments every time factory is called, it's not predictable
+    # so, force a value
+    @con_name = "pillar test OIDC connector"
+
+    # aside from name, this needs to match the factory values (dex_connectors_oidc_factory.rb)
+    def expected_dex_oidc_json(n)
+      {
+        id:            "oidc-#{n}",
+        type:          "oidc",
+        name:          @con_name,
+        provider_url:  "http://your.fqdn.here:5556/dex",
+        client_id:     "example-app",
+        client_secret: "ZXhhbXBsZS1hcHAtc2VjcmV0",
+        callback_url:  "http://well.formed.but.invalid/",
+        basic_auth:    true
+      }
     end
+
+    let!(:oidc_connector) { create(:dex_connector_oidc, :skip_validation, name: @con_name) }
+
     let(:expected_json) do
       {
         registries:          [],
@@ -565,10 +567,9 @@ RSpec.describe InternalApi::V1::PillarsController, type: :controller do
     end
 
     it "has dex OIDC connectors" do
-      get :show do
-        expect(json).to eq(expected_json)
-        delete(oidc_connector)
-      end
+      get :show
+      expect(json).to eq(expected_json)
+      #delete(oidc_connector)
     end
   end
 
