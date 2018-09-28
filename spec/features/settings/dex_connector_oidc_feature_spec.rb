@@ -68,7 +68,7 @@ describe "Feature: OIDC connector settings", js: true do
 
         click_button("Test Connection")
         click_button("Save")
-        expect(page).to have_content("DexConnectorOidc was successfully created.")
+        expect(page).to have_content("OIDC Connector was successfully created.")
         expect(page).to have_current_path(settings_dex_connector_oidcs_path)
       end
     end
@@ -87,7 +87,7 @@ describe "Feature: OIDC connector settings", js: true do
 
         click_button("Test Connection")
         click_button("Save")
-        expect(page).to have_content("DexConnectorOidc was successfully updated.")
+        expect(page).to have_content("OIDC Connector was successfully updated.")
       end
     end
 

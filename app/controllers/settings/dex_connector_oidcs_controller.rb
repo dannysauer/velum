@@ -23,15 +23,15 @@ class Settings::DexConnectorOidcsController < SettingsController
     if params[:validate]
       @is_data_valid = @data_holder.valid?
       if @is_data_valid
-        flash.now[:notice] = "#{@data_holder.class} is valid"
+        flash.now[:notice] = "#{friendly_name} is valid"
       else
-        flash.now[:alert]  = "#{@data_holder.class} is invalid"
+        flash.now[:alert]  = "#{friendly_name} is invalid"
       end
       render action: :new
     else
       @data_holder.save!
       redirect_to settings_dex_connector_oidcs_path,
-                  notice: "#{@data_holder.class} was successfully created."
+                  notice: "#{friendly_name} was successfully created."
     end
   rescue ActiveRecord::RecordInvalid
     render action: :new, status: :unprocessable_entity
@@ -52,15 +52,15 @@ class Settings::DexConnectorOidcsController < SettingsController
       end
       @is_data_valid = @data_holder.valid?
       if @is_data_valid
-        flash.now[:notice] = "#{@data_holder.class} is valid"
+        flash.now[:notice] = "#{friendly_name} is valid"
       else
-        flash.now[:alert]  = "#{@data_holder.class} is invalid"
+        flash.now[:alert]  = "#{friendly_name} is invalid"
       end
       render action: :edit
     else
       @data_holder.update_attributes!(data_holder_update_params)
       redirect_to [:settings, @data_holder],
-                  notice: "#{@data_holder.class} was successfully updated."
+                  notice: "#{friendly_name} was successfully updated."
     end
   rescue ActiveRecord::RecordInvalid
     render action: :edit, status: :unprocessable_entity
@@ -78,6 +78,10 @@ class Settings::DexConnectorOidcsController < SettingsController
 
   def data_holder_update_params
     oidc_connector_params
+  end
+
+  def friendly_name
+    "OIDC Connector"
   end
 
   private
