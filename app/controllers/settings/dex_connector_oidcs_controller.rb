@@ -22,9 +22,12 @@ class Settings::DexConnectorOidcsController < SettingsController
 
     if params[:validate]
       @is_data_valid = @data_holder.valid?
-      # TODO: figure out how to make notice actually display :)
-      render action: :new,
-             notice: @is_data_valid ? "#{@data_holder.class} is valid" : ""
+      if @is_data_valid
+        flash.now[:notice] = "#{@data_holder.class} is valid"
+      else
+        flash.now[:alert]  = "#{@data_holder.class} is invalid"
+      end
+      render action: :new
     else
       @data_holder.save!
       redirect_to settings_dex_connector_oidcs_path,
@@ -48,9 +51,12 @@ class Settings::DexConnectorOidcsController < SettingsController
         @data_holder[key] = value
       end
       @is_data_valid = @data_holder.valid?
-      # TODO: figure out how to make notice actually display :)
-      render action: :edit,
-             notice: @is_data_valid ? "#{@data_holder.class} is valid" : ""
+      if @is_data_valid
+        flash.now[:notice] = "#{@data_holder.class} is valid"
+      else
+        flash.now[:alert]  = "#{@data_holder.class} is invalid"
+      end
+      render action: :edit
     else
       @data_holder.update_attributes!(data_holder_update_params)
       redirect_to [:settings, @data_holder],
