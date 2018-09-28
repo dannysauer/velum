@@ -67,4 +67,4 @@
   .form-actions.clearfix
     = f.submit "Save", class: "btn btn-primary action", id: "oidc_conn_save", name: "submit", disabled: !@is_data_valid
     = link_to "Cancel", settings_dex_connector_oidcs_path, class: "btn btn-default action"
-    = f.submit "Validate", class: "btn btn-primary", id: "oidc_conn_validate", name: "validate"
+    = f.submit "Test Connection", class: "btn btn-primary", id: "oidc_conn_validate", name: "validate"
