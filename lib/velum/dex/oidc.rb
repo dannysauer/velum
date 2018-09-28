@@ -18,7 +18,6 @@ module Velum
             "basic_auth"    => con.basic_auth
           }
         end
-        oidc_connectors
       end
     end
   end
