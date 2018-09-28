@@ -5,7 +5,7 @@ module Velum
   module Dex
     class << self
       def oidc_connectors_as_pillar
-        oidc_connectors = DexConnectorOidc.all.map do |con|
+        DexConnectorOidc.all.map do |con|
           {
             "type"          => "oidc",
             "id"            => "oidc-" + con.id.to_s,
