@@ -66,7 +66,7 @@ describe "Feature: OIDC connector settings", js: true do
         fill_in id: "oidc_client_id",     with: "client"
         fill_in id: "oidc_client_secret", with: "secret_string"
 
-        click_button("Validate")
+        click_button("Test Connection")
         click_button("Save")
         expect(page).to have_content("DexConnectorOidc was successfully created.")
         expect(page).to have_current_path(settings_dex_connector_oidcs_path)
@@ -85,7 +85,7 @@ describe "Feature: OIDC connector settings", js: true do
       VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
         fill_in id: "oidc_name", with: "a new name"
 
-        click_button("Validate")
+        click_button("Test Connection")
         click_button("Save")
         expect(page).to have_content("DexConnectorOidc was successfully updated.")
       end
