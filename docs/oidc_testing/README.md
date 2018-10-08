@@ -1,31 +1,16 @@
-# Bring up a cluster w/ the OIDC code enabled.
-1. Set up dev environment (which you've probably already done)
+# Bring up a cluster
+1. Set up dev environment
    ```
    git clone git@github.com:kubic-project/automation
    cd automation
    ./caasp-devenv --setup
-   ```
-1. check out OIDC-aware velum
-   ```
-   cd ../velum
-   git remote add dannysauer git@github.com:dannysauer/velum
-   git fetch dannysauer
-   git checkout dannysauer/oidc_support_3
-   ```
-1. check out OIDC-aware salt
-   ```
-   cd ../salt
-   git remote add dannysauer git@github.com:dannysauer/salt
-   git fetch dannysauer
-   git checkout dannysauer/oidc_support
    ```
 1. `cd ../automation && ./caasp-devenv --build --bootstrap` (with whatever other options, like `-L provo`)
 
 # Bring up the stand-alone dex OIDC Provider (OP)
 1. `cd ../velum/docs/oidc_testing`
 1. `cp examples/config-dev.yaml{.example,}`
-1. edit `examples/config-dev.yaml`
-   * there is a "NOTE:" in each place you need to review, which will show up an alternate color in vim w/ syntax hilighting
+1. edit `examples/config-dev.yaml` as needed, paying special attention to the two places marked `NOTE`:
    * set the `issuer:` URL to match the DNS host name of your development machine.  Note that this hostname must resolve _via DNS_ from the master and worker nodes running the dex_dex container.  You can check this via: `docker exec _container_id_ ping -c 1 _host_name_`.  You should get a response back, and it should show the IP address of the host.  The URL used as the issuer _must_ be exactly the URL you use in the OIDC provider URL field in Vellum".
    * If you do not have a DNS-resolvable name, there are a variety of ways to fix that.  The easiest is to add an entry to the libvirt DNS resolver, which will make the hostname/IP mapping work from the VMs and containers within, but won't affect anything outside the cluster.  Say you're using `dexhost.do.main` as your issuer name, and it's listening on `192.168.0.213`.  Do this, and then retry the ping test above:
      ```
