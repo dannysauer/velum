@@ -225,8 +225,6 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
         expect(response.body).to match(/discovery failure/)
       end
       # rubocop:enable RSpec/MultipleExpectations
-
-      # it "shows an error message for 404-generating OIDC issuer"
     end
   end
   # rubocop:enable RSpec/ExampleLength
