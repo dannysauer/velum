@@ -48,7 +48,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
 
   end
 
-  # rubocop:disable RSpec/ExampleLength
+  # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
   describe "GET #create" do
     good_provider = "http://your.fqdn.here:5556/dex"
 
@@ -105,7 +105,6 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
         }
       end
       expect(response).not_to have_http_status(:unprocessable_entity)
-      # expect(subject).to redirect_to(settings_dex_connector_oidcs_path)
       expect(response).to redirect_to(settings_dex_connector_oidcs_path)
     end
 
@@ -125,7 +124,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
         end
         expect(response).to render_template("new")
         expect(response.body).to match(/Name can('|&#39;)t be blank/)
-        # TODO: expect save button to be disabled
+        expect(assigns(:is_data_valid)).to be_falsey
       end
 
       it "shows an error message for empty provider" do
@@ -141,7 +140,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
         expect(response.body).to match(
           /Provider Url (can('|&#39;)t be blank|is not a valid HTTP URL)/i
         )
-        # TODO: expect save button to be disabled
+        expect(assigns(:is_data_valid)).to be_falsey
       end
 
       it "shows an error message for empty client id" do
@@ -157,7 +156,7 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
         end
         expect(response).to render_template("new")
         expect(response.body).to match(/Client (Id )?can('|&#39;)t be blank/i)
-        # TODO: expect save button to be disabled
+        expect(assigns(:is_data_valid)).to be_falsey
       end
 
       it "shows an error message for empty client secret" do
@@ -173,10 +172,9 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
         end
         expect(response).to render_template("new")
         expect(response.body).to match(/Client Secret can('|&#39;)t be blank/i)
-        # TODO: expect save button to be disabled
+        expect(assigns(:is_data_valid)).to be_falsey
       end
 
-      # rubocop:disable RSpec/MultipleExpectations
       it "shows an error message for non-http issuer entry" do
         get :create, validate: false, dex_connector_oidc: {
           name:          "good oidc",
@@ -189,10 +187,9 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
         expect(response).to render_template("new")
         expect(response.body).to match(/is not a valid HTTP URL/)
         expect(response.body).not_to match(/unresolvable hostname|discovery failure|timeout/)
+        expect(assigns(:is_data_valid)).to be_falsey
       end
-      # rubocop:enable RSpec/MultipleExpectations
 
-      # rubocop:disable RSpec/MultipleExpectations
       it "shows an error message for invalid OIDC issuer hostname" do
         get :create, validate: false, dex_connector_oidc: {
           name:          "good oidc",
@@ -205,10 +202,9 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
         expect(response).to render_template("new")
         expect(response.body).to match(/is not a valid OIDC provider/)
         expect(response.body).to match(/unresolvable hostname|discovery failure/)
+        expect(assigns(:is_data_valid)).to be_falsey
       end
-      # rubocop:enable RSpec/MultipleExpectations
 
-      # rubocop:disable RSpec/MultipleExpectations
       it "shows an error message for mismatched OIDC issuer" do
         VCR.use_cassette("oidc/invalid_connector", allow_playback_repeats: true, record: :none) do
           get :create, validate: false, dex_connector_oidc: {
@@ -223,13 +219,13 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
         expect(response).to render_template("new")
         expect(response.body).to match(/is not a valid OIDC provider/)
         expect(response.body).to match(/discovery failure/)
+        expect(assigns(:is_data_valid)).to be_falsey
       end
-      # rubocop:enable RSpec/MultipleExpectations
     end
   end
-  # rubocop:enable RSpec/ExampleLength
+  # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
 
-  # rubocop:disable RSpec/ExampleLength
+  # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
   describe "GET #update" do
     good_provider = "http://your.fqdn.here:5556/dex"
     let!(:connector) { create(:dex_connector_oidc, :skip_validation) }
@@ -245,7 +241,8 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
           client_secret: connector.client_secret
         }
       expect(response).to render_template("edit")
-      expect(assigns(:is_data_valid)).to be(false)
+      expect(response).to have_http_status(:ok)
+      expect(assigns(:is_data_valid)).to be_falsey
     end
 
     it "passes validation with a good provider" do
@@ -264,38 +261,41 @@ RSpec.describe Settings::DexConnectorOidcsController, type: :controller do
       expect(assigns(:is_data_valid)).to be(true)
     end
 
-    it "fails updating with a bad provider" do
-      get :update, id: connector.id, validate: false,
-        dex_connector_oidc: {
-          name:          connector.name,
-          provider_url:  "dead",
-          callback_url:  connector.callback_url,
-          basic_auth:    connector.basic_auth,
-          client_id:     connector.client_id,
-          client_secret: connector.client_secret
-        }
-      expect(response).to render_template("edit")
-      expect(response).to have_http_status(:unprocessable_entity)
-    end
-
-    it "passes updating with a good provider" do
-      VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+    context "with skipped validation" do
+      it "refuses updating with a bad provider" do
         get :update, id: connector.id, validate: false,
           dex_connector_oidc: {
             name:          connector.name,
-            provider_url:  good_provider,
+            provider_url:  "dead",
             callback_url:  connector.callback_url,
             basic_auth:    connector.basic_auth,
             client_id:     connector.client_id,
             client_secret: connector.client_secret
           }
+        expect(response).to render_template("edit")
+        expect(response).to have_http_status(:unprocessable_entity)
+        expect(assigns(:is_data_valid)).to be_falsey
       end
-      expect(response).not_to have_http_status(:unprocessable_entity)
-      # expect(subject).to redirect_to([:settings, connector])
-      expect(response).to redirect_to([:settings, connector])
+
+      it "passes updating with a good provider" do
+        VCR.use_cassette("oidc/validate_connector", allow_playback_repeats: true, record: :none) do
+          get :update, id: connector.id, validate: false,
+            dex_connector_oidc: {
+              name:          connector.name,
+              provider_url:  good_provider,
+              callback_url:  connector.callback_url,
+              basic_auth:    connector.basic_auth,
+              client_id:     connector.client_id,
+              client_secret: connector.client_secret
+            }
+        end
+        expect(response).not_to have_http_status(:unprocessable_entity)
+        # expect(subject).to redirect_to([:settings, connector])
+        expect(response).to redirect_to([:settings, connector])
+      end
     end
   end
-  # rubocop:enable RSpec/ExampleLength
+  # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
 
   describe "POST #create" do
     # rubocop:disable RSpec/ExampleLength
