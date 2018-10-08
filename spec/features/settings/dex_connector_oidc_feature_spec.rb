@@ -90,7 +90,6 @@ describe "Feature: OIDC connector settings", js: true do
         expect(page).to have_content("OIDC Connector was successfully updated.")
       end
     end
-
   end
 
   describe "#show" do
@@ -110,7 +109,6 @@ describe "Feature: OIDC connector settings", js: true do
           expect(page).to have_current_path(settings_dex_connector_oidcs_path)
         end
       end
-
     end
 
     it "allows a user to go to an oidc connector's edit page" do
