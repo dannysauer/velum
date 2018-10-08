@@ -1,7 +1,7 @@
 require "base64"
 
+# This generates the JSON that SaltStack uses to list the OIDC connectors
 module Velum
-  # This class offers the integration between ruby and the Saltstack API.
   module Dex
     class << self
       def oidc_connectors_as_pillar
