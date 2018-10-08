@@ -530,8 +530,6 @@ RSpec.describe InternalApi::V1::PillarsController, type: :controller do
   # rubocop:enable RSpec/ExampleLength
 
   context "with dex OIDC connectors" do
-    let!(:oidc_connector) { create(:dex_connector_oidc, :skip_validation) }
-
     def expected_dex_oidc_json(conn)
       {
         registries:          [],
@@ -557,9 +555,22 @@ RSpec.describe InternalApi::V1::PillarsController, type: :controller do
       }
     end
 
-    it "has dex OIDC connectors" do
-      get :show
-      expect(json).to eq(expected_dex_oidc_json(oidc_connector))
+    context "with basic auth" do
+      let!(:oidc_connector) { create(:dex_connector_oidc, :skip_validation) }
+
+      it "has dex OIDC connectors" do
+        get :show
+        expect(json).to eq(expected_dex_oidc_json(oidc_connector))
+      end
+    end
+
+    context "without basic auth" do
+      let!(:oidc_connector) { create(:dex_connector_oidc, :skip_validation, basic_auth: true) }
+
+      it "has dex OIDC connectors" do
+        get :show
+        expect(json).to eq(expected_dex_oidc_json(oidc_connector))
+      end
     end
   end
 
