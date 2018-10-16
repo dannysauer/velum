@@ -6,4 +6,4 @@ Rails.application.config.filter_parameters += [
   :certificate,
   :bind_pw,
   :client_secret
-  ]
+]
