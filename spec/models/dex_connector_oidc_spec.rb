@@ -2,6 +2,7 @@ require "rails_helper"
 
 describe DexConnectorOidc, type: :model do
   good_provider_url = "http://your.fqdn.here:5556/dex"
+  mismatched_provider_url = "http://your.fqdn.here:5556/bad"
   malformed_urls = [
     "ftp://fqdn.is.invalid",
     "",
@@ -72,10 +73,35 @@ describe DexConnectorOidc, type: :model do
     end
   end
 
+  it "rejects mismatched issuer URL" do
+    VCR.use_cassette("oidc/invalid_connector", allow_playback_repeats: true, record: :none) do
+      connector[:provider_url] = mismatched_provider_url
+      expect(connector).not_to be_valid
+    end
+  end
+
   # Using VCR seems to suppress the creation of SocketError, so raise it here.
   it "catches an elusive exception just for code coverage" do
     # rubocop:disable RSpec/MessageSpies
-    expect(OidcProviderValidator).to receive(:compliant?).and_raise(SocketError)
+    expect(OidcProviderValidator).to receive(:validate_issuer?).and_raise(SocketError)
+    # rubocop:enable RSpec/MessageSpies
+    connector.provider_url = good_provider_url
+    expect(connector).not_to be_valid
+  end
+
+  # Raise timeout error instead of making a connection actually time out
+  it "catches a TimeoutError" do
+    # rubocop:disable RSpec/MessageSpies
+    expect(OidcProviderValidator).to receive(:validate_issuer?).and_raise(TimeoutError)
+    # rubocop:enable RSpec/MessageSpies
+    connector.provider_url = good_provider_url
+    expect(connector).not_to be_valid
+  end
+
+  # Raise OpenSSL error instead of making a bad cert
+  it "catches an OpenSSL Error" do
+    # rubocop:disable RSpec/MessageSpies
+    expect(OidcProviderValidator).to receive(:validate_issuer?).and_raise(OpenSSL::SSL::SSLError)
     # rubocop:enable RSpec/MessageSpies
     connector.provider_url = good_provider_url
     expect(connector).not_to be_valid
