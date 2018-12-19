@@ -1,0 +1,76 @@
+= render 'settings/apply'
+
+/ .alert.alert-warning role='alert'
+/   p Warning: Entering invalid values for any of the following settings will cause
+/     the nodes to enter into a broken state.
+
+h2 External Certificates
+
+p Enable the use of External Certificates for CaaSP and Kubernetes services
+.alert.alert-warning role='alert'
+ p Remember to add a Root CA Certificate to the System Wide Certificates corresponding to any new External Certificates
+
+= form_for :external_certificate, url: settings_ext_cert_index_path, method: :post do |f|
+  / .panel.panel-default
+
+    / .panel-heading
+    /   h3.panel-title Velum Certificate
+    / .panel-body
+    /   p Upload External Certificate for Velum
+
+    /   .form-group
+    /     = f.label :cert, "Cert"
+    /     = f.text_area :velum, class: "form-control", value: @velum, 'aria-describedby' => 'cert_help', rows: 10
+    /     small.form-text.text-muted#cert_help
+    /       | External Certificate for Velum
+  br
+  .panel.panel-default
+    .panel-heading
+      h3.panel-title Velum SSL Certificate and Key
+    .panel-body
+      / p ABCDEGFG
+      .form-group.form-group-certificate
+        = f.label :Velum_SSL_Certificate
+        p Upload SSL Certificate for Velum Authentication
+        = f.file_field :velum_cert, class: "form-control", required: false
+        = f.text_area :velum_cert_textarea, class: "form-control", value: @velum_cert, rows: 3, readonly: "readonly"
+      .form-group.form-group-certificate
+        = f.label :Velum_Key
+        p Upload Private Key for Velum Authentication
+        = f.file_field :velum_key, class: "form-control", required: false
+        = f.text_area :velum_key_textarea, class: "form-control", value: @velum_key, rows: 3, readonly: "readonly"
+  
+  br
+  .panel.panel-default
+    .panel-heading
+      h3.panel-title Kubernetes API SSL Certificate and Key
+    .panel-body
+      .form-group.form-group-certificate
+        = f.label :Kubeernetes_API_SSL_Certificate
+        p Upload SSL Certificate for Kubernetes API Authentication
+        = f.file_field :kubeapi_cert, class: "form-control", required: false
+        = f.text_area :kubeapi_cert_textarea, class: "form-control", value: @kubeapi_cert, rows: 3, readonly: "readonly"
+      .form-group.form-group-certificate
+        = f.label :Kubeernetes_API_Key
+        p Upload Private Key for Kubernetes API Authentication
+        = f.file_field :kubeapi_key, class: "form-control", required: false
+        = f.text_area :kubeapi_key_textarea, class: "form-control", value: @kubeapi_key, rows: 3, readonly: "readonly"
+
+  br
+  .panel.panel-default
+    .panel-heading
+      h3.panel-title Dex SSL Certificate and Key
+    .panel-body
+      .form-group.form-group-certificate
+        = f.label :Dex_SSL_Certificate
+        p Upload SSL Certificate for Dex Authentication
+        = f.file_field :dex_cert, class: "form-control", required: false
+        = f.text_area :dex_cert_textarea, class: "form-control", value: @dex_cert, rows: 3, readonly: "readonly"
+      .form-group.form-group-certificate
+        = f.label :Dex_Key
+        p Upload Private Key for Dex Authentication
+        = f.file_field :dex_key, class: "form-control", required: false
+        = f.text_area :vdex_key_textarea, class: "form-control", value: @dex_key, rows: 3, readonly: "readonly"
+
+  .clearfix.text-right.steps-container
+    = submit_tag "Save", id: "save", class: "btn btn-primary pull-right"
