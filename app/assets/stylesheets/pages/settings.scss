@@ -110,3 +110,19 @@ $sidebar-item-highlight: #00c081;
 .ldap-conn-message-valid {
   color: $brand-success;
 }
+
+.cert-table {
+  text-indent: 10px;
+}
+
+.ext-cert-success {
+  color: $brand-success;
+}
+
+.ext-cert-fail {
+  color: $brand-danger;
+}
+
+.cert-element {
+  margin: 0 0 2px;
+}
