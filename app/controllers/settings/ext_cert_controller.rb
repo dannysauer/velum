@@ -35,9 +35,8 @@ class Settings::ExtCertController < SettingsController
   private
 
   def set_instance_variables
-    # @velum_cert = Pillar.value(pillar: :external_cert_velum_cert) || "Default value, remove later"
     velum_cert_string = Pillar.value(pillar: :external_cert_velum_cert)
-    velum_key_string = Pillar.value(pillar: :external_cert_velum_key) #:external_cert_velum_key)
+    velum_key_string = Pillar.value(pillar: :external_cert_velum_key)
     @velum_cert = cert_parse(velum_cert_string)
     @velum_key = key_parse(velum_cert_string, velum_key_string)
 
@@ -138,8 +137,8 @@ class Settings::ExtCertController < SettingsController
       begin
         certpem = OpenSSL::X509::Certificate.new(cert_string)
         params[:CommonName] = certpem.issuer.to_a.select { |name, _data, _type| name == "CN" }.first[1]
-        params[:Issuer] = certpem.issuer.to_s.gsub("/", " ")
-        params[:Subject] = certpem.subject.to_s.gsub("/", " ")
+        params[:Issuer] = certpem.issuer.to_s.tr("/", " ")
+        params[:Subject] = certpem.subject.to_s.tr("/", " ")
         params[:SignatureAlgorithm] = certpem.signature_algorithm
         params[:SerialNumber] = certpem.serial
         params[:ValidNotBefore] = certpem.not_before
@@ -178,33 +177,6 @@ class Settings::ExtCertController < SettingsController
       end
     end
   end
-
-  # # To get fingerprint from certificate
-  # def cert_fingerprint(certpem)
-  #   fp = OpenSSL::Digest::SHA256.new(certpem.to_der).to_s
-  #   return fp
-  # rescue TypeError
-  #   raise TypeError
-  # end
-
-  # def read_cert(cert_string)
-  #   return OpenSSL::X509::Certificate.new cert_string
-  # rescue OpenSSL::X509::CertificateError
-  #   raise OpenSSL::X509::CertificateError
-  # end
-
-  # def read_key(key_string)
-  #   return OpenSSL::PKey::RSA.new key_string
-  # rescue OpenSSL::PKey::RSAError
-  #   raise OpenSSL::PKey::RSAError
-  # end
-
-  # def cert_fingerprint(cert_string)
-  #   cert = OpenSSL::X509::Certificate.new(cert_string)
-  #   return "SHA256 Fingerprint: " + OpenSSL::Digest::SHA256.new(cert.to_der).to_s.scan(/../).map(&:upcase).join(":")
-  # rescue
-  #   return "Could not calculate SHA256 fingerprint for the following:  #{cert_string[0, 30]}..."
-  # end
 
   # def key_fingerprint(key_string)
   #   cert = OpenSSL::PKey::RSA.new(key_string)

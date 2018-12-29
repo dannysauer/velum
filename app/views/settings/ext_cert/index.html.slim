@@ -29,17 +29,13 @@ p Enable the use of External SSL Certificates for CaaSP and Kubernetes services.
           | No Velum certificates found.  Please add a certificate.
       br
       .form-group.form-group-certificate
-        / = f.label :Velum_SSL_Certificate
         p Select "Choose File" to upload a new Velum SSL Certificate:
-        / p Upload SSL Certificate for Velum Authentication
         = f.file_field :velum_cert, class: "form-control", required: false
       br
 
       - if @velum_key
         .cert-table
           h5 Current Velum SSL Key Info:
-          / p #{@velum_key[0,70]}...
-          / textcolor = ""
           - @velum_key.each do |k, v|
             - if v.downcase == "true"
               - textcolor = "ext-cert-success"
@@ -54,10 +50,8 @@ p Enable the use of External SSL Certificates for CaaSP and Kubernetes services.
       br
 
       .form-group.form-group-certificate
-        / = f.label :Velum_Key
         p Select "Choose File" to upload a new Velum SSL Key:
         = f.file_field :velum_key, class: "form-control", required: false
-        / = f.text_area :velum_key_textarea, class: "form-control", value: @velum_key, rows: 3, readonly: "readonly"
       
   br
   .panel.panel-default
@@ -74,14 +68,6 @@ p Enable the use of External SSL Certificates for CaaSP and Kubernetes services.
         p Upload Private Key for Kubernetes API Authentication
         = f.file_field :kubeapi_key, class: "form-control", required: false
         = f.text_area :kubeapi_key_textarea, class: "form-control", value: @kubeapi_key, rows: 3, readonly: "readonly"
-      / .form-group.form-group-certificate
-      / table
-      /   tr
-      /     th Key Value
-      /   - @velum_cert_keys.each do |item|
-      /     tr
-      /       td = "#{item}: "
-      /       td=@velum_cert[item]
   br
   .panel.panel-default
     .panel-heading
@@ -97,23 +83,6 @@ p Enable the use of External SSL Certificates for CaaSP and Kubernetes services.
         p Upload Private Key for Dex Authentication
         = f.file_field :dex_key, class: "form-control", required: false
         = f.text_area :vdex_key_textarea, class: "form-control", value: @dex_key, rows: 3, readonly: "readonly"
-
-
-      / - if @velum_cert
-      /   .cert-table
-      /     table
-      /       thead
-      /         tr
-      /           th Key 
-      /           th Value
-      /       - @velum_cert.each do |k, v|
-      /         tr
-      /           td = k
-      /           td = v[0,29]
-      / - else
-      /   .cert-table
-      /     p
-      /     | No Velum certificates found.  Please add a certificate.
 
   .clearfix.text-right.steps-container
     = submit_tag "Save", id: "save", class: "btn btn-primary pull-right"
