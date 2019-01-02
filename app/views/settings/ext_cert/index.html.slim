@@ -16,7 +16,6 @@ p Enable the use of External SSL Certificates for CaaSP and Kubernetes services.
     .panel-heading
       h3.panel-title Velum SSL Certificate and Key
     .panel-body
-        
       - if @velum_cert
         .cert-table
           h5 Current Velum SSL Certificate Info:
@@ -32,7 +31,6 @@ p Enable the use of External SSL Certificates for CaaSP and Kubernetes services.
         p Select "Choose File" to upload a new Velum SSL Certificate:
         = f.file_field :velum_cert, class: "form-control", required: false
       br
-
       - if @velum_key
         .cert-table
           h5 Current Velum SSL Key Info:
@@ -42,13 +40,12 @@ p Enable the use of External SSL Certificates for CaaSP and Kubernetes services.
             - else
               - textcolor = "ext-cert-fail"
             .cert-element 
-              <strong>#{k}</strong>:  <font class=#{textcolor}>#{v}</font>
+              <strong>#{k}</strong>:  <span class=#{textcolor}>#{v}</span>
       - else
         .cert-table
           p
           | No Velum SSL Key found.  Please add an SSL key.
       br
-
       .form-group.form-group-certificate
         p Select "Choose File" to upload a new Velum SSL Key:
         = f.file_field :velum_key, class: "form-control", required: false

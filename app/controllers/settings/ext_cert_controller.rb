@@ -93,65 +93,88 @@ class Settings::ExtCertController < SettingsController
     }
   end
 
-  def upload_validate(map)
-    if map[:cert][:cert_string].empty? && map[:key][:key_string].empty?
-      true
-    elsif map[:cert][:cert_string].empty? || map[:key][:key_string].empty?
+  def upload_validate(key_cert_map)
+    # Do nothing if both cert/key are empty
+    if key_cert_map[:cert][:cert_string].empty? && key_cert_map[:key][:key_string].empty?
+      return true
+    # Prevent upload unnless both cert/key are present
+    elsif key_cert_map[:cert][:cert_string].empty? || key_cert_map[:key][:key_string].empty?
       set_instance_variables
-      flash[:notice] = "Error with #{map[:name]}, certificate and key must be uploaded together."
+      flash[:notice] = "Error with #{key_cert_map[:name]}, certificate and key must be uploaded together."
       render action: :index, status: :unprocessable_entity
-      false
+      return false
+    # Validate cert/key and verify that they match
     else
-      begin
-        cert = OpenSSL::X509::Certificate.new map[:cert][:cert_string]
-        key = OpenSSL::PKey::RSA.new map[:key][:key_string]
-      rescue OpenSSL::X509::CertificateError
+      cert = read_cert(key_cert_map[:cert][:cert_string])
+      key = read_key(key_cert_map[:key][:key_string])
+
+      # Check certificate valid format
+      unless cert
         set_instance_variables
-        flash[:notice] = "Invalid #{map[:name]} certificate, check format and try again."
-        render action: :index, status: :unprocessable_entity
-        return false
-      rescue OpenSSL::PKey::RSAError
-        set_instance_variables
-        flash[:notice] = "Invalid #{map[:name]} key, check format and try again."
+        flash[:notice] = "Invalid #{key_cert_map[:name]} certificate, check format and try again."
         render action: :index, status: :unprocessable_entity
         return false
       end
 
-      unless cert.verify(key)
+      # Check key valid format
+      unless key
         set_instance_variables
-        flash[:notice] = "#{map[:name]} Certificate/Key pair invalid.  Ensure Certificate and Key are matching."
+        flash[:notice] = "Invalid #{key_cert_map[:name]} key, check format and try again."
         render action: :index, status: :unprocessable_entity
         return false
       end
-      true
+
+      # Check that key matches certificate
+      unless cert.verify(key)
+        set_instance_variables
+        flash[:notice] = "#{key_cert_map[:name]} Certificate/Key pair invalid.  Ensure Certificate and Key are matching."
+        render action: :index, status: :unprocessable_entity
+        return false
+      end
+
+      # Check that certificate date is valid
+      if cert.not_after.to_s.strip.empty?
+        return false
+      elsif cert.not_before.to_s.strip.empty?
+          return false
+      elsif Time.now.to_i > cert.not_after.to_i
+          return false
+      elsif Time.now.to_i < cert.not_before.to_i
+          return false
+      end
+      # return true
+
+      # Everything's good!
+      return true
     end
   end
 
-  # Parse Certificate and get information.
   def cert_parse(cert_string)
     params = {}
+
+    # Check if certificate exists, assume that validation has already occured
     if !cert_string
       params[:Error] = "Certificate not available, please upload a certificate"
       return params
     else
+      cert = read_cert(cert_string)
+      unless cert
+        params[:Error] = "Failed to parse stored certificate, please check format and upload again"
+        return params
+      end
+      params[:CommonName] = cert.issuer.to_a.select { |name, _data, _type| name == "CN" }.first[1]
+      params[:Issuer] = cert.issuer.to_s.tr("/", " ")
+      params[:Subject] = cert.subject.to_s.tr("/", " ")
+      params[:SignatureAlgorithm] = cert.signature_algorithm
+      params[:SerialNumber] = cert.serial
+      params[:ValidNotBefore] = cert.not_before
+      params[:ValidNotAfter] = cert.not_after
       begin
-        certpem = OpenSSL::X509::Certificate.new(cert_string)
-        params[:CommonName] = certpem.issuer.to_a.select { |name, _data, _type| name == "CN" }.first[1]
-        params[:Issuer] = certpem.issuer.to_s.tr("/", " ")
-        params[:Subject] = certpem.subject.to_s.tr("/", " ")
-        params[:SignatureAlgorithm] = certpem.signature_algorithm
-        params[:SerialNumber] = certpem.serial
-        params[:ValidNotBefore] = certpem.not_before
-        params[:ValidNotAfter] = certpem.not_after
-
-        fingerprint = OpenSSL::Digest::SHA256.new(certpem.to_der)
+        fingerprint = OpenSSL::Digest::SHA256.new(cert.to_der)
         params[:SHA256Fingerprint] = fingerprint.to_s.scan(/../).map(&:upcase).join(":")
         return params
       rescue TypeError
         params[:Error] = "Failed to calculate Certificate fingerprint, please check format and upload again"
-        return params
-      rescue OpenSSL::X509::CertificateError
-        params[:Error] = "Failed to parse stored certificate, please check format and upload again"
         return params
       end
     end
@@ -159,24 +182,50 @@ class Settings::ExtCertController < SettingsController
 
   def key_parse(cert_string, key_string)
     params = {}
-    if !key_string || !cert_string
+    # Check if key exists, assume that validation has already occured
+    if !key_string# || !cert_string
       params[:Error] = "Key not available, please upload a key"
       return params
+    elsif !cert_string
+      params[:Error] = "Certificate not available, please upload a certificate"
+      return params
     else
-      begin
-        cert = OpenSSL::X509::Certificate.new(cert_string)
-        key = OpenSSL::PKey::RSA.new(key_string)
-        params[:CertAndKeyMatch] = cert.check_private_key(key).to_s.titleize
-        return params
-      rescue OpenSSL::X509::CertificateError
+      cert = read_cert(cert_string)
+      key = read_key(key_string)
+      unless cert
         params[:Error] = "Failed to parse stored certificate, please check format and upload again"
         return params
-      rescue OpenSSL::PKey::RSAError
+      end
+      unless key
         params[:Error] = "Failed to parse stored key, please check format and upload again"
         return params
       end
+
+      params[:CertAndKeyMatch] = cert.check_private_key(key).to_s.titleize
+      return params
     end
   end
+
+  # Common method to build cert object from string
+  def read_cert(cert_string)
+    begin
+      return OpenSSL::X509::Certificate.new(cert_string)
+    rescue OpenSSL::X509::CertificateError
+      # Push error handling to calling method for flexibility
+      return nil
+    end
+  end
+
+  # Common method to build key object from string
+  def read_key(key_string)
+    begin
+      return OpenSSL::PKey::RSA.new(key_string)
+    rescue OpenSSL::PKey::RSAError
+      # Push error handling to calling method for flexibility
+      return nil
+    end
+  end
+  
 
   # def key_fingerprint(key_string)
   #   cert = OpenSSL::PKey::RSA.new(key_string)
