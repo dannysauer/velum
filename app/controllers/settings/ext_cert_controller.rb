@@ -126,6 +126,11 @@ class Settings::ExtCertController < SettingsController
         return render_failure_event(message)
       end
 
+      p "---------------"
+      p cert
+      p key
+      p "---------------"
+
       # Check that key matches certificate
       unless cert.check_private_key(key)
         message = "#{key_cert_map[:name]} Certificate/Key pair invalid.  Ensure Certificate" \
