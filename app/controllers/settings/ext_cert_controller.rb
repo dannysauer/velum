@@ -2,15 +2,20 @@ require "openssl"
 
 # Settings::Ext_Cert allows users to install their own SSL Certificates
 # and Private Keys for encrypted external communication
+# rubocop:disable Metrics/ClassLength
 class Settings::ExtCertController < SettingsController
+  VELUM_NAME = "Velum".freeze
+  KUBEAPI_NAME = "Kubernetes API".freeze
+  DEX_NAME = "Dex".freeze
+
   def index
     set_instance_variables
   end
 
   def create
     key_cert_map_temp = key_cert_map
-    key_cert_map_temp.keys.each do |i|
-      return unless upload_validate(key_cert_map_temp[i])
+    key_cert_map_temp.each_key do |i|
+      return false unless upload_validate(key_cert_map_temp[i])
     end
 
     cert_map = {
@@ -26,24 +31,26 @@ class Settings::ExtCertController < SettingsController
       redirect_to settings_ext_cert_index_path,
         notice: "External Certificate settings successfully saved."
       return
+    # :nocov:
+    # An error here would require a failure in connection to velum->salt
+    # or a corruption in mapping of values in the salt pillar
     else
       set_instance_variables
       render action: :index, status: :unprocessable_entity
+      # :nocov:
     end
   end
 
   private
 
   def set_instance_variables
-    velum_cert_string = Pillar.value(pillar: :external_cert_velum_cert)
-    velum_key_string = Pillar.value(pillar: :external_cert_velum_key)
-    @velum_cert = cert_parse(velum_cert_string)
-    @velum_key = key_parse(velum_cert_string, velum_key_string)
+    @velum_cert = cert_parse(Pillar.value(pillar: :external_cert_velum_cert))
+    @velum_key = key_parse(Pillar.value(pillar: :external_cert_velum_key))
 
-    @kubeapi_cert = Pillar.value(pillar: :external_cert_kubeapi_cert) || "Default value, remove later"
-    @kubeapi_key = Pillar.value(pillar: :external_cert_kubeapi_key) || "Default value, remove later"
-    @dex_cert = Pillar.value(pillar: :external_cert_dex_cert) || "Default value, remove later"
-    @dex_key = Pillar.value(pillar: :external_cert_dex_key) || "Default value, remove later"
+    @kubeapi_cert = Pillar.value(pillar: :external_cert_kubeapi_cert)
+    @kubeapi_key = Pillar.value(pillar: :external_cert_kubeapi_key)
+    @dex_cert = Pillar.value(pillar: :external_cert_dex_cert)
+    @dex_key = Pillar.value(pillar: :external_cert_dex_key)
     # @abcd = Pillar.simple_pillars[:external_cert_velum_cert]
   end
 
@@ -58,7 +65,7 @@ class Settings::ExtCertController < SettingsController
   def key_cert_map
     {
       velum:   {
-        name: "Velum",
+        name: VELUM_NAME,
         cert: {
           cert_string:      get_val_from_form(:external_certificate, :velum_cert),
           pillar_model_key: :external_cert_velum_cert
@@ -69,7 +76,7 @@ class Settings::ExtCertController < SettingsController
         }
       },
       kubeapi: {
-        name: "Kubernetes API",
+        name: KUBEAPI_NAME,
         cert: {
           cert_string:      get_val_from_form(:external_certificate, :kubeapi_cert),
           pillar_model_key: :external_cert_kubeapi_cert
@@ -80,7 +87,7 @@ class Settings::ExtCertController < SettingsController
         }
       },
       dex:     {
-        name: "Dex",
+        name: DEX_NAME,
         cert: {
           cert_string:      get_val_from_form(:external_certificate, :dex_cert),
           pillar_model_key: :external_cert_dex_cert
@@ -93,16 +100,15 @@ class Settings::ExtCertController < SettingsController
     }
   end
 
+  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
   def upload_validate(key_cert_map)
     # Do nothing if both cert/key are empty
     if key_cert_map[:cert][:cert_string].empty? && key_cert_map[:key][:key_string].empty?
-      return true
+      true
     # Prevent upload unnless both cert/key are present
     elsif key_cert_map[:cert][:cert_string].empty? || key_cert_map[:key][:key_string].empty?
-      set_instance_variables
-      flash[:notice] = "Error with #{key_cert_map[:name]}, certificate and key must be uploaded together."
-      render action: :index, status: :unprocessable_entity
-      return false
+      message = "Error with #{key_cert_map[:name]}, certificate and key must be uploaded together."
+      render_failure_event(message)
     # Validate cert/key and verify that they match
     else
       cert = read_cert(key_cert_map[:cert][:cert_string])
@@ -110,44 +116,38 @@ class Settings::ExtCertController < SettingsController
 
       # Check certificate valid format
       unless cert
-        set_instance_variables
-        flash[:notice] = "Invalid #{key_cert_map[:name]} certificate, check format and try again."
-        render action: :index, status: :unprocessable_entity
-        return false
+        message = "Invalid #{key_cert_map[:name]} certificate, check format and try again."
+        return render_failure_event(message)
       end
 
       # Check key valid format
       unless key
-        set_instance_variables
-        flash[:notice] = "Invalid #{key_cert_map[:name]} key, check format and try again."
-        render action: :index, status: :unprocessable_entity
-        return false
+        message = "Invalid #{key_cert_map[:name]} key, check format and try again."
+        return render_failure_event(message)
       end
 
       # Check that key matches certificate
-      unless cert.verify(key)
-        set_instance_variables
-        flash[:notice] = "#{key_cert_map[:name]} Certificate/Key pair invalid.  Ensure Certificate and Key are matching."
-        render action: :index, status: :unprocessable_entity
-        return false
+      unless cert.check_private_key(key)
+        message = "#{key_cert_map[:name]} Certificate/Key pair invalid.  Ensure Certificate" \
+        " and Key are matching."
+        return render_failure_event(message)
       end
 
-      # Check that certificate date is valid
-      if cert.not_after.to_s.strip.empty?
-        return false
-      elsif cert.not_before.to_s.strip.empty?
-          return false
-      elsif Time.now.to_i > cert.not_after.to_i
-          return false
-      elsif Time.now.to_i < cert.not_before.to_i
-          return false
-      end
-      # return true
+      # Check that cert has valid date range
+      return false unless cert_date_check(cert)
+
+      # Moved to another task
+      # Check that hostname is in SubjectAltName of cert
+      # return false unless hostname_check(key_cert_map[:name], cert)
+
+      # Check the trust chain is valid
+      return false unless trust_chain_verify(cert)
 
       # Everything's good!
-      return true
+      true
     end
   end
+  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
 
   def cert_parse(cert_string)
     params = {}
@@ -155,82 +155,120 @@ class Settings::ExtCertController < SettingsController
     # Check if certificate exists, assume that validation has already occured
     if !cert_string
       params[:Error] = "Certificate not available, please upload a certificate"
-      return params
     else
       cert = read_cert(cert_string)
       unless cert
+        # :nocov:
+        # Cert has aleady been valiated when entered, an error here would require a failure
+        # in connection from velum to salt or an unintended change in the salt pillar
         params[:Error] = "Failed to parse stored certificate, please check format and upload again"
         return params
+        # :nocov:
       end
-      params[:CommonName] = cert.issuer.to_a.select { |name, _data, _type| name == "CN" }.first[1]
-      params[:Issuer] = cert.issuer.to_s.tr("/", " ")
-      params[:Subject] = cert.subject.to_s.tr("/", " ")
-      params[:SignatureAlgorithm] = cert.signature_algorithm
-      params[:SerialNumber] = cert.serial
-      params[:ValidNotBefore] = cert.not_before
-      params[:ValidNotAfter] = cert.not_after
-      begin
-        fingerprint = OpenSSL::Digest::SHA256.new(cert.to_der)
-        params[:SHA256Fingerprint] = fingerprint.to_s.scan(/../).map(&:upcase).join(":")
-        return params
-      rescue TypeError
-        params[:Error] = "Failed to calculate Certificate fingerprint, please check format and upload again"
-        return params
-      end
+      fingerprint = cert_fingerprint(cert)
+
+      params["Subject Alternative Name".to_sym] = get_san_array(cert)
+      params["Subject Name".to_sym] = cert.subject.to_s.tr("/", " ")
+      params["Issuer Name".to_sym] = cert.issuer.to_s.tr("/", " ")
+      params["Signature Algorithm".to_sym] = cert.signature_algorithm
+      params["Not Valid Before".to_sym] = cert.not_before
+      params["Not Valid After".to_sym] = cert.not_after
+      params[fingerprint[0]] = fingerprint[1]
     end
+    params
   end
 
-  def key_parse(cert_string, key_string)
+  def cert_fingerprint(cert)
+    # Error-checking ignored, cert already validated and verified
+    fingerprint = OpenSSL::Digest::SHA256.new(cert.to_der)
+    fingerprint_string = fingerprint.to_s.scan(/../).map(&:upcase).join(":")
+    ["SHA256 Fingerprint".to_sym, fingerprint_string]
+  end
+
+  def key_parse(key_string)
     params = {}
-    # Check if key exists, assume that validation has already occured
-    if !key_string# || !cert_string
-      params[:Error] = "Key not available, please upload a key"
-      return params
-    elsif !cert_string
-      params[:Error] = "Certificate not available, please upload a certificate"
-      return params
+    if !key_string
+      params[:Error] = "Key not available, please upload a certificate"
+    # :nocov:
+    # Key has aleady been valiated when entered, an error here would require a failure
+    # in connection from velum to salt or an unintended change in the salt pillar
     else
-      cert = read_cert(cert_string)
       key = read_key(key_string)
-      unless cert
-        params[:Error] = "Failed to parse stored certificate, please check format and upload again"
-        return params
-      end
       unless key
         params[:Error] = "Failed to parse stored key, please check format and upload again"
-        return params
       end
-
-      params[:CertAndKeyMatch] = cert.check_private_key(key).to_s.titleize
-      return params
+      key_valid = if key
+        true
+      else
+        false
+      end
+      params["Valid Key"] = key_valid
+      # :nocov:
     end
+    params
   end
 
   # Common method to build cert object from string
   def read_cert(cert_string)
-    begin
-      return OpenSSL::X509::Certificate.new(cert_string)
-    rescue OpenSSL::X509::CertificateError
-      # Push error handling to calling method for flexibility
-      return nil
-    end
+    return OpenSSL::X509::Certificate.new(cert_string)
+  rescue OpenSSL::X509::CertificateError, NoMethodError, TypeError
+    # Push error handling to calling method for flexibility
+    return nil
   end
 
   # Common method to build key object from string
   def read_key(key_string)
-    begin
-      return OpenSSL::PKey::RSA.new(key_string)
-    rescue OpenSSL::PKey::RSAError
-      # Push error handling to calling method for flexibility
-      return nil
+    return OpenSSL::PKey::RSA.new(key_string)
+  rescue OpenSSL::PKey::RSAError, NoMethodError, TypeError
+    # Push error handling to calling method for flexibility
+    return nil
+  end
+
+  # Common method to simplify failure renders
+  def render_failure_event(message)
+    set_instance_variables
+    flash[:notice] = message
+    render action: :index, status: :unprocessable_entity
+    false
+  end
+
+  # Get SubjectAltName field buried in a certificate
+  def get_san_array(cert)
+    subject_alt_name = cert.extensions.find { |e| e.oid == "subjectAltName" }
+    return nil unless subject_alt_name
+    subject_alt_name.value.gsub("DNS:", "").delete(",").split(" ")
+  end
+
+  def cert_date_check(cert)
+    if Time.now.utc > cert.not_after || Time.now.utc < cert.not_before
+      message = "Certificate out of valid date range"
+      render_failure_event(message)
+    else
+      true
     end
   end
-  
 
-  # def key_fingerprint(key_string)
-  #   cert = OpenSSL::PKey::RSA.new(key_string)
-  #   return "SHA256 Fingerprint: " + OpenSSL::Digest::SHA256.new(key.to_der).to_s.scan(/../).map(&:upcase).join(":")
-  # rescue
-  #   return "Could not calculate SHA256 fingerprint for the following:  #{key_string[0, 30]}..."
+  # Moved to another task
+  # # Placeholder for verification of hostname in SubjectAltName of cert
+  # def hostname_check(_service_name, _cert)
+  #   true
+  #   # service_hostname = case service_name
+  #   #                    when VELUM_NAME
+  #   #                      Pillar.simple_pillars[:dashboard_external_fqdn]
+  #   #                    when KUBEAPI_NAME
+  #   #                      Pillar.simple_pillars[:apiserver]
+  #   #                    when DEX_NAME
+  #   #                      "TBD" # TODO:  Get Dex endpoint
+  #   # end
+
+  #   # return false unless service_hostname
+  #   # return false unless get_san_array(cert).include(service_hostname)
+  #   # true
   # end
+
+  # Placeholder for trust chain validation
+  def trust_chain_verify(_cert)
+    true
+  end
 end
+# rubocop:enable Metrics/ClassLength

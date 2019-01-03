@@ -81,13 +81,6 @@ class Pillar < ApplicationRecord
         external_cert_kubeapi_key:          "external_cert:kube_api:key",
         external_cert_dex_cert:             "external_cert:dex:cert",
         external_cert_dex_key:              "external_cert:dex:key"
-
-        # external_cert_velum_cert:           "external_certificate_information:velum:cert",
-        # external_cert_velum_key:            "external_certificate_information:velum:key",
-        # external_cert_kubeapi_cert:         "external_certificate_information:kube_api:cert",
-        # external_cert_kubeapi_key:          "external_certificate_information:kube_api:key",
-        # external_cert_dex_cert:             "external_certificate_information:dex:cert",
-        # external_cert_dex_key:              "external_certificate_information:dex:key"
       }
     end
     # rubocop:enable Metrics/MethodLength

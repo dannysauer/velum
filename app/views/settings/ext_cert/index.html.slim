@@ -21,24 +21,36 @@ p Enable the use of External SSL Certificates for CaaSP and Kubernetes services.
           h5 Current Velum SSL Certificate Info:
           - @velum_cert.each do |k, v|
             .cert-element 
-              <strong>#{k}</strong>:  #{v}
+                  <strong>#{k}</strong>:  #{v}
+            / - if k.to_s.downcase == "extensions" 
+            /   .cert-element
+            /     <strong>#{k}</strong>:
+            /     - v.each do |v_e|
+            /       .cert-subelement
+            /         <span>#{v_e.split(' = ').join(': ')}</span>
+            / - else
+            /   .cert-element 
+            /     <strong>#{k}</strong>:  #{v}
       - else
         .cert-table
           p
           | No Velum certificates found.  Please add a certificate.
       br
       .form-group.form-group-certificate
+        / = f.label :Velum_SSL_Certificate
         p Select "Choose File" to upload a new Velum SSL Certificate:
         = f.file_field :velum_cert, class: "form-control", required: false
+        / = f.text_area :velum_cert_textarea, class: "form-control", value: @velum_cert, rows: 3, readonly: "readonly"
       br
       - if @velum_key
         .cert-table
           h5 Current Velum SSL Key Info:
           - @velum_key.each do |k, v|
-            - if v.downcase == "true"
+            - if v
               - textcolor = "ext-cert-success"
             - else
               - textcolor = "ext-cert-fail"
+
             .cert-element 
               <strong>#{k}</strong>:  <span class=#{textcolor}>#{v}</span>
       - else
@@ -47,8 +59,10 @@ p Enable the use of External SSL Certificates for CaaSP and Kubernetes services.
           | No Velum SSL Key found.  Please add an SSL key.
       br
       .form-group.form-group-certificate
+        / = f.label :Velum_Key
         p Select "Choose File" to upload a new Velum SSL Key:
         = f.file_field :velum_key, class: "form-control", required: false
+        / = f.text_area :velum_key_textarea, class: "form-control", value: @velum_key, rows: 3, readonly: "readonly"
       
   br
   .panel.panel-default
