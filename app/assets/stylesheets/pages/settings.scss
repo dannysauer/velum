@@ -112,7 +112,14 @@ $sidebar-item-highlight: #00c081;
 }
 
 .cert-table {
-  text-indent: 10px;
+  td.field {
+    font-weight: bold;
+    width: 180px;
+    vertical-align: top;
+  }
+  td.value {
+    word-break: break-word;
+  }
 }
 
 .ext-cert-success {
@@ -130,4 +137,8 @@ $sidebar-item-highlight: #00c081;
 .cert-subelement {
   padding-left: 40px;
   text-indent: -15px;
+}
+
+.cert-parse-heading {
+  font-size: 16px;
 }

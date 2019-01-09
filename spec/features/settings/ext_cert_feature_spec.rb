@@ -29,7 +29,14 @@ describe "Feature: External Cerificate settings", js: true do
 
     it "barely does the bare minimum" do
       expect(page).to have_http_status(:success)
-      expect(page).to have_content("External Certificates", wait: 1)
+      expect(page).to have_content("External Certificates")
+    end
+
+    it "saves the form with nothing attached" do
+      click_button("Save")
+      expect(page).to have_http_status(:success)
+      expect(page).to have_content("External Certificate settings successfully saved.")
+      expect(page).to have_css(".alert-message")
     end
 
     it "sucessfully uploads velum cert/key" do
@@ -38,7 +45,7 @@ describe "Feature: External Cerificate settings", js: true do
 
       click_button("Save")
       expect(page).to have_http_status(:success)
-      expect(page).to have_content("External Certificate settings successfully saved.", wait: 1)
+      expect(page).to have_content("External Certificate settings successfully saved.")
     end
 
     it "sucessfully uploads kubeAPI cert/key" do
@@ -47,7 +54,7 @@ describe "Feature: External Cerificate settings", js: true do
 
       click_button("Save")
       expect(page).to have_http_status(:success)
-      expect(page).to have_content("External Certificate settings successfully saved.", wait: 1)
+      expect(page).to have_content("External Certificate settings successfully saved.")
     end
 
     it "sucessfully uploads dex cert/key" do
@@ -56,7 +63,7 @@ describe "Feature: External Cerificate settings", js: true do
 
       click_button("Save")
       expect(page).to have_http_status(:success)
-      expect(page).to have_content("External Certificate settings successfully saved.", wait: 1)
+      expect(page).to have_content("External Certificate settings successfully saved.")
     end
 
     it "sucessfully uploads velum, kubeAPI, and dex cert/key" do
@@ -69,7 +76,16 @@ describe "Feature: External Cerificate settings", js: true do
 
       click_button("Save")
       expect(page).to have_http_status(:success)
-      expect(page).to have_content("External Certificate settings successfully saved.", wait: 1)
+      expect(page).to have_content("External Certificate settings successfully saved.")
+    end
+
+    it "sucessfully lists Subject Alternative Names" do
+      attach_file("external_certificate_velum_cert", ssl_cert_file_b)
+      attach_file("external_certificate_velum_key", ssl_key_file_b)
+
+      click_button("Save")
+      expect(page).to have_http_status(:success)
+      expect(page).to have_content("ftp.example.com")
     end
 
     # Faiure Conditions
@@ -80,7 +96,7 @@ describe "Feature: External Cerificate settings", js: true do
 
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
-      expect(page).to have_content("Invalid Velum certificate, check format and try again", wait: 1)
+      expect(page).to have_content("Invalid Velum certificate, check format and try again")
     end
 
     it "uploads malformed velum key" do
@@ -89,7 +105,7 @@ describe "Feature: External Cerificate settings", js: true do
 
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
-      expect(page).to have_content("Invalid Velum key, check format and try again.", wait: 1)
+      expect(page).to have_content("Invalid Velum key, check format and try again.")
     end
 
     it "uploads malformed kubeAPI certificate" do
@@ -99,7 +115,7 @@ describe "Feature: External Cerificate settings", js: true do
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
       expect(page).to have_content("Invalid Kubernetes API certificate, check format " \
-        "and try again", wait: 1)
+        "and try again")
     end
 
     it "uploads malformed kubeAPI key" do
@@ -109,7 +125,7 @@ describe "Feature: External Cerificate settings", js: true do
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
       expect(page).to have_content("Invalid Kubernetes API key, check format and try " \
-        "again.", wait: 1)
+        "again.")
     end
 
     it "uploads malformed dex certificate" do
@@ -118,7 +134,7 @@ describe "Feature: External Cerificate settings", js: true do
 
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
-      expect(page).to have_content("Invalid Dex certificate, check format and try again", wait: 1)
+      expect(page).to have_content("Invalid Dex certificate, check format and try again")
     end
 
     it "uploads malformed dex key" do
@@ -127,7 +143,7 @@ describe "Feature: External Cerificate settings", js: true do
 
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
-      expect(page).to have_content("Invalid Dex key, check format and try again.", wait: 1)
+      expect(page).to have_content("Invalid Dex key, check format and try again.")
     end
 
     it "uploads only velum certificate" do
@@ -136,7 +152,7 @@ describe "Feature: External Cerificate settings", js: true do
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
       expect(page).to have_content("Error with Velum, certificate and key must be uploaded " \
-        "together.", wait: 1)
+        "together.")
     end
 
     it "uploads only velum key" do
@@ -145,7 +161,7 @@ describe "Feature: External Cerificate settings", js: true do
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
       expect(page).to have_content("Error with Velum, certificate and key must be uploaded " \
-        "together.", wait: 1)
+        "together.")
     end
 
     it "uploads only velum, kubeAPI, and dex certificates" do
@@ -156,7 +172,7 @@ describe "Feature: External Cerificate settings", js: true do
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
       expect(page).to have_content("Error with Velum, certificate and key must be uploaded " \
-        "together.", wait: 1)
+        "together.")
     end
 
     it "uploads only velum, kubeAPI, and dex keys" do
@@ -167,7 +183,7 @@ describe "Feature: External Cerificate settings", js: true do
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
       expect(page).to have_content("Error with Velum, certificate and key must be uploaded " \
-        "together.", wait: 1)
+        "together.")
     end
 
     it "uploads mismatched velum cert/key 1" do
@@ -177,7 +193,7 @@ describe "Feature: External Cerificate settings", js: true do
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
       expect(page).to have_content("Certificate/Key pair invalid.  Ensure Certificate and Key " \
-        "are matching.", wait: 1)
+        "are matching.")
     end
 
     it "uploads mismatched velum cert/key 2" do
@@ -187,7 +203,7 @@ describe "Feature: External Cerificate settings", js: true do
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
       expect(page).to have_content("Certificate/Key pair invalid.  Ensure Certificate and Key " \
-        "are matching.", wait: 1)
+        "are matching.")
     end
 
     it "uploads mismatched velum, kubeAPI, and dex cert/key" do
@@ -201,7 +217,7 @@ describe "Feature: External Cerificate settings", js: true do
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
       expect(page).to have_content("Certificate/Key pair invalid.  Ensure Certificate and Key " \
-        "are matching.", wait: 1)
+        "are matching.")
     end
 
     it "uploads velum cert with invalid date range" do
@@ -210,7 +226,7 @@ describe "Feature: External Cerificate settings", js: true do
 
       click_button("Save")
       expect(page).to have_http_status(:unprocessable_entity)
-      expect(page).to have_content("Certificate out of valid date range", wait: 1)
+      expect(page).to have_content("Certificate out of valid date range")
     end
   end
 end

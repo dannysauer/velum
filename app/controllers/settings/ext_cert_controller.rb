@@ -46,17 +46,15 @@ class Settings::ExtCertController < SettingsController
   def set_instance_variables
     @velum_cert = cert_parse(Pillar.value(pillar: :external_cert_velum_cert))
     @velum_key = key_parse(Pillar.value(pillar: :external_cert_velum_key))
-
-    @kubeapi_cert = Pillar.value(pillar: :external_cert_kubeapi_cert)
-    @kubeapi_key = Pillar.value(pillar: :external_cert_kubeapi_key)
-    @dex_cert = Pillar.value(pillar: :external_cert_dex_cert)
-    @dex_key = Pillar.value(pillar: :external_cert_dex_key)
-    # @abcd = Pillar.simple_pillars[:external_cert_velum_cert]
+    @kubeapi_cert = cert_parse(Pillar.value(pillar: :external_cert_kubeapi_cert))
+    @kubeapi_key = key_parse(Pillar.value(pillar: :external_cert_kubeapi_key))
+    @dex_cert = cert_parse(Pillar.value(pillar: :external_cert_dex_cert))
+    @dex_key = key_parse(Pillar.value(pillar: :external_cert_dex_key))
   end
 
-  def get_val_from_form(form, param)
-    if params[form][param].present?
-      params[form][param].read.strip
+  def get_val_from_form(param)
+    if params.key?(:external_certificate) && params[:external_certificate].key?(param)
+      params[:external_certificate][param].read.strip
     else
       ""
     end
@@ -67,40 +65,40 @@ class Settings::ExtCertController < SettingsController
       velum:   {
         name: VELUM_NAME,
         cert: {
-          cert_string:      get_val_from_form(:external_certificate, :velum_cert),
+          cert_string:      get_val_from_form(:velum_cert),
           pillar_model_key: :external_cert_velum_cert
         },
         key:  {
-          key_string:       get_val_from_form(:external_certificate, :velum_key),
+          key_string:       get_val_from_form(:velum_key),
           pillar_model_key: :external_cert_velum_key
         }
       },
       kubeapi: {
         name: KUBEAPI_NAME,
         cert: {
-          cert_string:      get_val_from_form(:external_certificate, :kubeapi_cert),
+          cert_string:      get_val_from_form(:kubeapi_cert),
           pillar_model_key: :external_cert_kubeapi_cert
         },
         key:  {
-          key_string:       get_val_from_form(:external_certificate, :kubeapi_key),
+          key_string:       get_val_from_form(:kubeapi_key),
           pillar_model_key: :external_cert_kubeapi_key
         }
       },
       dex:     {
         name: DEX_NAME,
         cert: {
-          cert_string:      get_val_from_form(:external_certificate, :dex_cert),
+          cert_string:      get_val_from_form(:dex_cert),
           pillar_model_key: :external_cert_dex_cert
         },
         key:  {
-          key_string:       get_val_from_form(:external_certificate, :dex_key),
+          key_string:       get_val_from_form(:dex_key),
           pillar_model_key: :external_cert_dex_key
         }
       }
     }
   end
 
-  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+  # rubocop:disable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   def upload_validate(key_cert_map)
     # Do nothing if both cert/key are empty
     if key_cert_map[:cert][:cert_string].empty? && key_cert_map[:key][:key_string].empty?
@@ -140,21 +138,22 @@ class Settings::ExtCertController < SettingsController
       # Check that hostname is in SubjectAltName of cert
       # return false unless hostname_check(key_cert_map[:name], cert)
 
+      # Moved to another task
       # Check the trust chain is valid
-      return false unless trust_chain_verify(cert)
+      # return false unless trust_chain_verify(cert)
 
       # Everything's good!
       true
     end
   end
-  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity, Metrics/AbcSize
+  # rubocop:enable Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 
   def cert_parse(cert_string)
     params = {}
 
     # Check if certificate exists, assume that validation has already occured
     if !cert_string
-      params[:Error] = "Certificate not available, please upload a certificate"
+      params[:Notice] = "Certificate not available, please upload a certificate"
     else
       cert = read_cert(cert_string)
       unless cert
@@ -227,7 +226,7 @@ class Settings::ExtCertController < SettingsController
   # Common method to simplify failure renders
   def render_failure_event(message)
     set_instance_variables
-    flash[:notice] = message
+    flash[:alert] = message
     render action: :index, status: :unprocessable_entity
     false
   end
@@ -248,27 +247,14 @@ class Settings::ExtCertController < SettingsController
     end
   end
 
-  # Moved to another task
-  # # Placeholder for verification of hostname in SubjectAltName of cert
-  # def hostname_check(_service_name, _cert)
+  # # Placeholder for hostname/SubjectAltName check
+  # def hostname_check(_cert)
   #   true
-  #   # service_hostname = case service_name
-  #   #                    when VELUM_NAME
-  #   #                      Pillar.simple_pillars[:dashboard_external_fqdn]
-  #   #                    when KUBEAPI_NAME
-  #   #                      Pillar.simple_pillars[:apiserver]
-  #   #                    when DEX_NAME
-  #   #                      "TBD" # TODO:  Get Dex endpoint
-  #   # end
-
-  #   # return false unless service_hostname
-  #   # return false unless get_san_array(cert).include(service_hostname)
-  #   # true
   # end
 
-  # Placeholder for trust chain validation
-  def trust_chain_verify(_cert)
-    true
-  end
+  # # Placeholder for trust chain validation
+  # def trust_chain_verify(_cert)
+  #   true
+  # end
 end
 # rubocop:enable Metrics/ClassLength
