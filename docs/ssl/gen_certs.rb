@@ -33,6 +33,9 @@ class CA
   # accessors for literal objects for Ruby-based use
   attr_reader :key
   attr_reader :cert
+  def ca_pass
+    @@ca_pass
+  end
 
   # need string representations for use in files
   def key_pem
@@ -131,16 +134,28 @@ class ServerCert
   attr_reader :key
 
   # PEM-formatted strings for external file-based use
+  # return cert and key with no password
   def key_pem
-    @key.to_pem('aes256', @@ca_pass)
+    @key.to_pem
+  end
+
+  # same, but return the key with a password applied
+  def key_pem_encrypted(pass=@ca.ca_pass)
+    @key.to_pem('aes256', @ca.ca_pass)
   end
 
   def cert_pem
     @cert.to_pem
   end
 
+  # cert and key contatenated; no password on key
   def pem
-    @cert.to_pem + @key.to_pem
+    self.cert_pem + self.key_pem
+  end
+
+  # cert and key contatenated; password on key
+  def pem_encrypted(pass=@ca.ca_pass)
+    self.cert_pem + self.key_pem_encrypted(pass)
   end
 
   # maybe useful later?
