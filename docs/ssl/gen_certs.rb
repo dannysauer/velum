@@ -6,6 +6,9 @@ class CA
   @@ca_pass   = 'linux'
   @@ca_serial = 492113 # random number between 2^10 and 2^30
 
+  # note on the subject/issuer fields:
+  # These fields are an X.501 Name, which is an "RDN sequence"
+
   def initialize(bits=4096, subject)
     # generate CA key (no password in this form)
     @key = OpenSSL::PKey::RSA.new bits
@@ -27,7 +30,7 @@ class CA
     #@cert.sign(@key, OpenSSL::Digest::SHA256.new)
   end
 
-  # literal objects for Ruby internal use
+  # accessors for literal objects for Ruby-based use
   attr_reader :key
   attr_reader :cert
 
@@ -75,7 +78,7 @@ end
 
 class RootCA < CA
 
-  def initialize(bits=4096, subject="C=US, ST=IL, O=Danny Sauer dot com, OU=Danny Sauer dot com Certificate Authority, CN=Danny Sauer dot com Root CA/emailAddress=danny@dannysauer.com")
+  def initialize(bits=4096, subject="C=US, ST=IL, O=Danny Sauer dot com, OU=Danny Sauer dot com Certificate Authority, CN=Danny Sauer dot com Root CA/emailAddress=dsauer@suse.com")
     super(bits, subject)
     @cert.sign(@key, OpenSSL::Digest::SHA256.new)
   end
@@ -86,7 +89,7 @@ end
 class IntermediateCA < CA
   @@ilevel = 0
 
-  def initialize(ca, bits=4096, subject="C=US, ST=IL, O=Danny Sauer dot com, OU=Danny Sauer dot com Certificate Authority, CN=Danny Sauer dot com Intermediate CA level %s/emailAddress=danny@dannysauer.com" % (@@ilevel+=1))
+  def initialize(ca, bits=4096, subject="C=US, ST=IL, O=Danny Sauer dot com, OU=Danny Sauer dot com Certificate Authority, CN=Danny Sauer dot com Intermediate CA level %s/emailAddress=dsauer@suse.com" % (@@ilevel+=1))
     @ca = ca
     super(bits, subject)
     @cert.sign(@ca.key, OpenSSL::Digest::SHA256.new)
@@ -97,8 +100,8 @@ class ServerCert
   def initialize(
     ca,
     altname_list=nil,
-    start_date=Time.now,  # note that Ruby seems to refuse to create a cert w/ no date
-    lifetime_days=1 * 365 * 24 * 60 * 60 # 1 year validity
+    start_time=Time.now,  # Note that nil will cause creation to fail (dates are required)
+    lifetime_secs=1 * 365 * 24 * 60 * 60 # 1 year validity
   )
     @ca = ca
 
@@ -109,12 +112,9 @@ class ServerCert
     @cert.subject = OpenSSL::X509::Name.parse "/DC=org/DC=ruby-lang/CN=Ruby certificate"
     @cert.issuer = @ca.cert.subject # CA is the issuer
     @cert.public_key = @key.public_key
-    if start_date
-      @cert.not_before = start_date
-    end
-    if lifetime_days
-      @cert.not_after = (@cert.not_before ? @cert.not_before : Time.now) + lifetime_days 
-    end
+    @cert.not_before = start_time
+    lifetime_secs = lifetime_secs ? lifetime_secs : 1
+    @cert.not_after = @cert.not_before + lifetime_secs 
     ef = OpenSSL::X509::ExtensionFactory.new
     ef.subject_certificate = @cert
     ef.issuer_certificate = @ca.cert
@@ -126,7 +126,7 @@ class ServerCert
     @cert.sign(@ca.key, OpenSSL::Digest::SHA256.new)
   end
 
-  # literal objects for Ruby internal use
+  # accessors for literal objects for Ruby-based use
   attr_reader :cert
   attr_reader :key
 
@@ -144,7 +144,7 @@ class ServerCert
   end
 
   # maybe useful later?
-  def resign
+  def re_sign
     @cert.sign(@ca.key, OpenSSL::Digest::SHA256.new)
   end
 end
@@ -161,8 +161,8 @@ if false
       "DNS:host2",
       "IP:1.2.3.4"
     ],
-    start_date=Time.now-14*24*60*60,
-    lifetime_days=5*24*60*60
+    start_time=Time.now-14*24*60*60,
+    lifetime_secs=5*24*60*60
   )
 
   #puts ca.key_pem
