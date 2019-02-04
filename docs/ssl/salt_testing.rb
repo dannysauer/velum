@@ -16,8 +16,8 @@ altname_list = {
  "velum": [
     "DNS:admin",
     "DNS:admin.infra.caasp.local",
-    "DNS:b34af80fcc9e4a59ad14c1c2e1f54313",
-    "DNS:b34af80fcc9e4a59ad14c1c2e1f54313.infra.caasp.local",
+    #"DNS:b34af80fcc9e4a59ad14c1c2e1f54313",
+    #"DNS:b34af80fcc9e4a59ad14c1c2e1f54313.infra.caasp.local",
     "DNS:admin.devenv.caasp.suse.net",
     "IP:10.17.1.0"
   ],
@@ -33,6 +33,7 @@ altname_list = {
     "DNS:api",
     "DNS:api.infra.caasp.local",
     "DNS:kube-api-x3.devenv.caasp.suse.net",
+    "DNS:kube-api-x1.devenv.caasp.suse.net",
     #"IP Address:172.24.0.1",
     "DNS:dex",
     "DNS:dex.kube-system",
@@ -61,6 +62,7 @@ altname_list = {
     "DNS:api",
     "DNS:api.infra.caasp.local",
     "DNS:kube-api-x3.devenv.caasp.suse.net",
+    "DNS:kube-api-x1.devenv.caasp.suse.net",
     "DNS:kubernetes.default.svc.cluster.local",
     "IP:172.24.0.1"
   ]
