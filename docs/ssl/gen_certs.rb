@@ -121,7 +121,8 @@ class ServerCert
     ef = OpenSSL::X509::ExtensionFactory.new
     ef.subject_certificate = @cert
     ef.issuer_certificate = @ca.cert
-    @cert.add_extension(ef.create_extension("keyUsage","digitalSignature", true))
+    @cert.add_extension(ef.create_extension("basicConstraints","CA:FALSE",true))
+    @cert.add_extension(ef.create_extension("keyUsage","keyEncipherment,dataEncipherment,digitalSignature", true))
     @cert.add_extension(ef.create_extension("subjectKeyIdentifier","hash",false))
     if altname_list
       @cert.add_extension(ef.create_extension("subjectAltName", altname_list.join(',')))
